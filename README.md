@@ -20,9 +20,33 @@ SOC Log Analyzer Pro combines intuitive visualization, export-ready reporting, a
 
 > Add screenshot images here once available.
 
-- `screenshots/dashboard.png` — Main analysis dashboard
-- `screenshots/report-panel.png` — Detailed report view
-- `screenshots/export-options.png` — Export and monitoring controls
+## 🖥️ Main Dashboard
+
+![Main Dashboard](screenshots/dashboard.png)
+
+---
+
+## 📊 Detailed Report View
+
+![Report View](screenshots/report.png)
+
+---
+
+## 📄 Exported PDF Report
+
+![PDF Export](screenshots/pdf_export.png)
+
+---
+
+## 📝 Exported Text Output
+
+![Text Export](screenshots/text_export.png)
+
+---
+
+## 🌐 Exported HTML Report
+
+![HTML Export](screenshots/html_export.png)
 
 ---
 
