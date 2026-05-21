@@ -231,6 +231,7 @@
             color: #c8d8f3;
             background: linear-gradient(180deg, rgba(11, 28, 56, 0.95), rgba(4, 10, 20, 0.98));
             transition: border-color 0.3s ease, background 0.3s ease;
+            cursor: pointer;
         }
 
         .dropzone.dragover {
@@ -238,10 +239,16 @@
             background: rgba(53, 199, 255, 0.08);
         }
 
+        .dropzone.file-selected {
+            border-color: #35c7ff;
+            background: rgba(53, 199, 255, 0.04);
+        }
+
         .dropzone .drop-label {
             display: grid;
             gap: 16px;
             align-items: center;
+            pointer-events: none;
         }
 
         .dropzone .drop-icon {
@@ -268,12 +275,27 @@
             color: var(--muted);
         }
 
+        .file-name {
+            display: none;
+            padding: 12px 16px;
+            background: rgba(53, 199, 255, 0.1);
+            border-radius: 12px;
+            color: #60a5fa;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .file-name.show {
+            display: block;
+        }
+
         .dropzone .upload-actions {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 10px;
+            pointer-events: auto;
         }
 
         .dropzone .upload-actions .btn {
@@ -293,8 +315,8 @@
             gap: 8px;
             padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 0.85rem;
             color: #dbeafe;
         }
@@ -388,12 +410,12 @@
         }
 
         .feed-card {
-            min-height: 360px;
+            min-height: auto;
         }
 
         .feed-card h5 {
             font-size: 1.05rem;
-            margin-bottom: 18px;
+            margin-bottom: 8px;
         }
 
         .feed-list {
@@ -402,6 +424,8 @@
             padding: 0;
             display: grid;
             gap: 14px;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .feed-item {
@@ -458,12 +482,24 @@
             color: #4ade80;
         }
 
+        .feed-pill.low {
+            background: rgba(56, 189, 248, 0.12);
+            color: #93c5fd;
+        }
+
         .table-card {
             overflow: hidden;
         }
 
+        .table-card .table-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
         .table-card table {
             min-width: 100%;
+            font-size: 0.95rem;
         }
 
         .table-card thead th {
@@ -471,10 +507,18 @@
             top: 0;
             z-index: 2;
             background: rgba(6, 13, 24, 0.9);
+            font-weight: 600;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .table-card tbody td {
+            padding: 12px;
         }
 
         .table-card tbody tr {
-            border-top: 1px solid rgba(255,255,255,0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
         }
 
         .alert-row-high {
@@ -492,7 +536,8 @@
         .alert-row-high:hover,
         .alert-row-medium:hover,
         .alert-row-low:hover {
-            box-shadow: 0 0 24px rgba(255,255,255,0.06);
+            box-shadow: 0 0 24px rgba(255, 255, 255, 0.06);
+            background-color: rgba(53, 199, 255, 0.08);
         }
 
         .status-pill {
@@ -527,7 +572,7 @@
             align-items: center;
             gap: 14px;
             padding-top: 18px;
-            border-top: 1px solid rgba(255,255,255,0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             margin-top: 32px;
             color: var(--muted);
             font-size: 0.92rem;
@@ -584,6 +629,12 @@
         .btn-primary {
             background: linear-gradient(135deg, #35c7ff, #3b82f6);
             border: none;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #28a6d1, #2563eb);
+            color: #fff;
         }
 
         .btn-outline-primary {
@@ -591,9 +642,52 @@
             color: #dbeafe;
         }
 
+        .btn-outline-primary:hover {
+            background: rgba(53, 199, 255, 0.1);
+            border-color: rgba(53, 199, 255, 0.5);
+        }
+
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(53, 199, 255, 0.4);
+            color: var(--text);
+            box-shadow: 0 0 0 0.25rem rgba(53, 199, 255, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--muted);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-bottom: 12px;
+        }
+
+        .chart-container-small {
+            position: relative;
+            height: 280px;
+            margin-bottom: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
         @media (max-width: 1199px) {
             .dashboard-shell {
                 grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: auto;
             }
 
             .dashboard-grid {
@@ -603,17 +697,27 @@
             .kpi-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .chart-container,
+            .chart-container-small {
+                height: 300px;
+            }
         }
 
         @media (max-width: 767px) {
-            .kpi-grid,
-            .dashboard-grid {
+            .dashboard-shell {
                 grid-template-columns: 1fr;
+                padding: 16px;
+                gap: 16px;
             }
 
-            .sidebar {
-                position: relative;
-                top: auto;
+            .kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
             }
 
             .topbar {
@@ -621,11 +725,156 @@
                 align-items: flex-start;
             }
 
+            .topbar h1 {
+                font-size: 1.5rem;
+            }
+
+            .upload-header {
+                flex-direction: column;
+            }
+
             .feed-card,
             .table-card,
             .chart-card {
                 padding: 18px;
             }
+
+            .kpi-card .kpi-value {
+                font-size: 2rem;
+            }
+
+            .chart-container,
+            .chart-container-small {
+                height: 280px;
+            }
+
+            .table-card table {
+                font-size: 0.85rem;
+            }
+
+            .table-card thead th,
+            .table-card tbody td {
+                padding: 8px;
+            }
+            /* ============================= */
+/* MODERN ALERT TABLE UI */
+/* ============================= */
+
+.table-card {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 28px;
+    padding: 24px;
+    border: none;
+    box-shadow:
+        0 10px 40px rgba(0,0,0,0.08);
+}
+
+.table-title {
+    color: #111827;
+    font-weight: 700;
+}
+
+.table-card .text-muted {
+    color: #6b7280 !important;
+}
+
+#alertsTable {
+    border-collapse: separate;
+    border-spacing: 0 12px;
+}
+
+#alertsTable thead th {
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: none;
+    padding-bottom: 12px;
+}
+
+#alertsTable tbody tr {
+    background: #ffffff;
+    transition: 0.3s ease;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow:
+        0 4px 14px rgba(0,0,0,0.05);
+}
+
+#alertsTable tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 24px rgba(0,0,0,0.08);
+}
+
+#alertsTable tbody td {
+    padding: 18px;
+    vertical-align: middle;
+    border: none;
+    color: #111827;
+    font-weight: 500;
+}
+
+/* Rounded row corners */
+#alertsTable tbody tr td:first-child {
+    border-top-left-radius: 18px;
+    border-bottom-left-radius: 18px;
+}
+
+#alertsTable tbody tr td:last-child {
+    border-top-right-radius: 18px;
+    border-bottom-right-radius: 18px;
+}
+
+/* Severity Pills */
+
+.status-pill {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.status-pill.HIGH {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status-pill.MEDIUM {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.status-pill.LOW {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+/* Search & Filter */
+
+#alertSearch,
+#severityFilter {
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 10px 14px;
+    background: #f9fafb;
+    color: #111827;
+}
+
+#alertSearch:focus,
+#severityFilter:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96,165,250,0.15);
+}
+
+/* Remove dark rows */
+
+.alert-row-high,
+.alert-row-medium,
+.alert-row-low {
+    background: transparent !important;
+}
         }
     </style>
 </head>
@@ -671,15 +920,16 @@
                     </div>
                 </div>
 
-                <form action="{{ url_for('dashboard') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                <form action="{{ url_for('dashboard') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                     <div id="uploadDropzone" class="dropzone">
-                        <input type="file" name="logfile" id="logfileInput" accept=".json,.xml" hidden>
+                        <input type="file" name="logfile" id="logfileInput" accept=".json,.xml" required>
                         <div class="drop-label">
                             <div class="drop-icon">⬆️</div>
                             <strong>Drag and drop your log file here</strong>
                             <p>Supports JSON array, JSON Lines, and XML event log payloads.</p>
+                            <div id="fileName" class="file-name"></div>
                             <div class="upload-actions">
-                                <label for="logfileInput" class="btn btn-outline-primary">Browse logs</label>
+                                <button type="button" class="btn btn-outline-primary" id="browseBtn">Browse logs</button>
                                 <button type="submit" class="btn btn-primary" id="analyzeBtn">Analyze now</button>
                             </div>
                         </div>
@@ -749,7 +999,9 @@
                                 <p class="text-muted mb-0">High, medium, and low alerts percentage.</p>
                             </div>
                         </div>
-                        <canvas id="severityChart" data-high-alerts="{{ high_alerts }}" data-medium-alerts="{{ medium_alerts }}" data-low-alerts="{{ low_alerts }}"></canvas>
+                        <div class="chart-container-small">
+                            <canvas id="severityChart" data-high-alerts="{{ high_alerts }}" data-medium-alerts="{{ medium_alerts }}" data-low-alerts="{{ low_alerts }}"></canvas>
+                        </div>
                     </div>
 
                     <div class="chart-card">
@@ -759,7 +1011,9 @@
                                 <p class="text-muted mb-0">Activity trend from the latest ingestion.</p>
                             </div>
                         </div>
-                        <canvas id="timelineChart"></canvas>
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -771,7 +1025,9 @@
                                 <p class="text-muted mb-0">Most active sources in the alert stream.</p>
                             </div>
                         </div>
-                        <canvas id="topIpChart"></canvas>
+                        <div class="chart-container">
+                            <canvas id="topIpChart"></canvas>
+                        </div>
                     </div>
                     <div class="chart-card">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -780,7 +1036,9 @@
                                 <p class="text-muted mb-0">Relative spread of attack types.</p>
                             </div>
                         </div>
-                        <canvas id="attackDistributionChart"></canvas>
+                        <div class="chart-container-small">
+                            <canvas id="attackDistributionChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -793,7 +1051,7 @@
                                 <h5 class="table-title mb-1">Alert Activity Log</h5>
                                 <p class="text-muted mb-0">Search, filter, and inspect active security alerts.</p>
                             </div>
-                            <div class="d-flex flex-wrap gap-2">
+                            <div class="d-flex flex-wrap gap-2" style="min-width: 300px;">
                                 <input id="alertSearch" type="search" class="form-control form-control-sm" placeholder="Search alerts...">
                                 <select id="severityFilter" class="form-select form-select-sm">
                                     <option value="all">All Severities</option>
@@ -804,7 +1062,7 @@
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-borderless align-middle" id="alertsTable">
+                            <table class="table table-borderless align-middle mb-0" id="alertsTable">
                                 <thead>
                                     <tr>
                                         <th>Severity</th>
@@ -822,7 +1080,7 @@
                                                 <span class="status-pill {{ alert.severity }}">{{ alert.severity }}</span>
                                             </td>
                                             <td>{{ alert.type }}</td>
-                                            <td><code>{{ alert.ip }}</code></td>
+                                            <td><code style="color: #60a5fa;">{{ alert.ip }}</code></td>
                                             <td>{{ alert.user }}</td>
                                             <td class="text-end">{{ alert.attempts }}</td>
                                         </tr>
@@ -843,7 +1101,7 @@
                 <div class="right-panel">
                     <div class="feed-card" id="intel">
                         <h5>Live Threat Intelligence</h5>
-                        <p class="text-muted">Active alerts, suspicious IP feed, and analyst notifications.</p>
+                        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 16px;">Active alerts, suspicious IP feed, and analyst notifications.</p>
                         <ul class="feed-list">
                             {% if alerts %}
                                 {% for alert in alerts[:5] %}
@@ -852,7 +1110,7 @@
                                         <span class="feed-title">{{ alert.type }}</span>
                                         <span class="feed-pill {{ alert.severity|lower }}">{{ alert.severity }}</span>
                                     </div>
-                                    <p class="mb-0">{{ alert.user }} targeted by {{ alert.ip }} with {{ alert.attempts }} attempts.</p>
+                                    <p class="mb-0" style="font-size: 0.9rem;">{{ alert.user }} targeted by {{ alert.ip }} with {{ alert.attempts }} attempts.</p>
                                 </li>
                                 {% endfor %}
                             {% else %}
@@ -886,58 +1144,80 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ======================
+        // FILE UPLOAD HANDLING
+        // ======================
         const uploadInput = document.getElementById('logfileInput');
         const uploadDropzone = document.getElementById('uploadDropzone');
         const uploadForm = document.getElementById('uploadForm');
         const analyzeBtn = document.getElementById('analyzeBtn');
+        const browseBtn = document.getElementById('browseBtn');
+        const fileNameDisplay = document.getElementById('fileName');
         const loadingOverlay = document.getElementById('loadingOverlay');
 
-        // Click anywhere on dropzone to open file picker
-        uploadDropzone.addEventListener('click', (event) => {
-            // Only open picker if clicking on the dropzone itself, not on buttons/labels
-            if (event.target === uploadDropzone || event.target.closest('.drop-label')) {
-                uploadInput.click();
-            }
+        // Browse button click handler
+        browseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadInput.click();
         });
-        
-        // Update visual feedback when file is selected
+
+        // File input change handler
         uploadInput.addEventListener('change', (event) => {
             if (uploadInput.files && uploadInput.files.length > 0) {
-                uploadDropzone.style.borderColor = '#35c7ff';
-                uploadDropzone.style.background = 'rgba(53, 199, 255, 0.04)';
-                console.log('File selected:', uploadInput.files[0].name);
+                const fileName = uploadInput.files[0].name;
+                updateFileDisplay(fileName);
             }
         });
 
+        // Dropzone drag over
         uploadDropzone.addEventListener('dragover', (event) => {
             event.preventDefault();
+            event.stopPropagation();
             uploadDropzone.classList.add('dragover');
         });
-        uploadDropzone.addEventListener('dragleave', () => uploadDropzone.classList.remove('dragover'));
+
+        uploadDropzone.addEventListener('dragleave', () => {
+            uploadDropzone.classList.remove('dragover');
+        });
+
+        // Dropzone drop
         uploadDropzone.addEventListener('drop', (event) => {
             event.preventDefault();
+            event.stopPropagation();
             uploadDropzone.classList.remove('dragover');
-            if (event.dataTransfer.files.length > 0) {
+            
+            if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
                 uploadInput.files = event.dataTransfer.files;
-                uploadDropzone.style.borderColor = '#35c7ff';
-                uploadDropzone.style.background = 'rgba(53, 199, 255, 0.04)';
-                console.log('File dropped:', uploadInput.files[0].name);
+                const fileName = uploadInput.files[0].name;
+                updateFileDisplay(fileName);
             }
         });
 
-        // Validate and submit form
-        uploadForm?.addEventListener('submit', (event) => {
-            console.log('Form submit attempted. Files:', uploadInput.files.length);
+        // Update file display
+        function updateFileDisplay(fileName) {
+            fileNameDisplay.textContent = '✓ Selected: ' + fileName;
+            fileNameDisplay.classList.add('show');
+            uploadDropzone.classList.add('file-selected');
+        }
+
+        // Form submit handler
+        uploadForm.addEventListener('submit', (event) => {
             if (!uploadInput.files || uploadInput.files.length === 0) {
                 event.preventDefault();
                 alert('Please select a log file first.');
+                browseBtn.focus();
                 return false;
             }
-            console.log('Form submission allowed');
             loadingOverlay.classList.add('active');
+            return true;
         });
 
+        // ======================
+        // ALERT TABLE FILTERING
+        // ======================
         const alertSearch = document.getElementById('alertSearch');
         const severityFilter = document.getElementById('severityFilter');
         const alertRows = Array.from(document.querySelectorAll('#alertsTable tbody tr'));
@@ -957,6 +1237,9 @@
         alertSearch?.addEventListener('input', filterAlerts);
         severityFilter?.addEventListener('change', filterAlerts);
 
+        // ======================
+        // THREAT SCORE CALCULATION
+        // ======================
         const highAlerts = Number(document.getElementById('severityChart')?.dataset.highAlerts || 0);
         const mediumAlerts = Number(document.getElementById('severityChart')?.dataset.mediumAlerts || 0);
         const lowAlerts = Number(document.getElementById('severityChart')?.dataset.lowAlerts || 0);
@@ -967,6 +1250,9 @@
             threatScoreElement.textContent = threatScore;
         }
 
+        // ======================
+        // CHART CONFIGURATION
+        // ======================
         const chartPalette = {
             high: '#fb7185',
             medium: '#facc15',
@@ -974,8 +1260,13 @@
             accent: '#35c7ff'
         };
 
+        // Disable animations for better performance
+        Chart.defaults.animation = false;
+
+        // Severity Distribution Chart (Doughnut)
         const severityCtx = document.getElementById('severityChart');
         if (severityCtx) {
+            const total = highAlerts + mediumAlerts + lowAlerts || 1;
             new Chart(severityCtx, {
                 type: 'doughnut',
                 data: {
@@ -984,21 +1275,44 @@
                         data: [highAlerts, mediumAlerts, lowAlerts],
                         backgroundColor: [chartPalette.high, chartPalette.medium, chartPalette.low],
                         borderColor: '#07101f',
-                        borderWidth: 2,
+                        borderWidth: 3,
+                        hoverOffset: 8,
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { color: '#cbd5e1' }
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 12, weight: '600' },
+                                padding: 15,
+                                usePointStyle: true,
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#dbeafe',
+                            borderColor: 'rgba(53, 199, 255, 0.3)',
+                            borderWidth: 1,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                }
+                            }
                         }
                     }
                 }
             });
         }
 
+        // Timeline Chart (Line)
         const timelineCtx = document.getElementById('timelineChart');
         if (timelineCtx) {
             const timelineLabels = ['-30m', '-20m', '-10m', 'Now'];
@@ -1017,31 +1331,55 @@
                         label: 'Alerts',
                         data: timelineData,
                         borderColor: chartPalette.accent,
-                        backgroundColor: 'rgba(53, 199, 255, 0.18)',
+                        backgroundColor: 'rgba(53, 199, 255, 0.1)',
                         fill: true,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#ffffff'
+                        pointRadius: 5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: chartPalette.accent,
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7,
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                        x: {
+                            ticks: { color: '#94a3b8', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            beginAtZero: true
+                        }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#dbeafe',
+                            borderColor: 'rgba(53, 199, 255, 0.3)',
+                            borderWidth: 1,
+                        }
+                    }
                 }
             });
         }
 
+        // Top IPs Chart (Bar)
         const ipCtx = document.getElementById('topIpChart');
         if (ipCtx) {
             const ipCount = {};
             alertRows.forEach((row) => {
-                const ip = row.dataset.ip || 'unknown';
-                if (!ipCount[ip]) ipCount[ip] = 0;
-                ipCount[ip] += 1;
+                if (row.style.display !== 'none') {
+                    const ip = row.dataset.ip || 'unknown';
+                    if (!ipCount[ip]) ipCount[ip] = 0;
+                    ipCount[ip] += 1;
+                }
             });
             const topIps = Object.entries(ipCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
             new Chart(ipCtx, {
@@ -1052,393 +1390,107 @@
                         label: 'Alerts',
                         data: topIps.map(item => item[1]),
                         backgroundColor: 'rgba(53, 199, 255, 0.6)',
+                        borderColor: 'rgba(53, 199, 255, 0.8)',
+                        borderWidth: 1,
                         borderRadius: 12,
+                        hoverBackgroundColor: 'rgba(53, 199, 255, 0.8)',
                         maxBarThickness: 32,
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                        x: {
+                            ticks: { color: '#94a3b8', font: { size: 11 } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            beginAtZero: true
+                        }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#dbeafe',
+                            borderColor: 'rgba(53, 199, 255, 0.3)',
+                            borderWidth: 1,
+                        }
+                    }
                 }
             });
         }
 
+        // Attack Distribution Chart (Polar)
         const attackDistCtx = document.getElementById('attackDistributionChart');
         if (attackDistCtx) {
             const attackCount = {};
             alertRows.forEach((row) => {
-                const type = row.dataset.type || 'Unknown';
-                if (!attackCount[type]) attackCount[type] = 0;
-                attackCount[type] += 1;
+                if (row.style.display !== 'none') {
+                    const type = row.dataset.type || 'Unknown';
+                    if (!attackCount[type]) attackCount[type] = 0;
+                    attackCount[type] += 1;
+                }
             });
             const attackEntries = Object.entries(attackCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            const colors = [
+                'rgba(251, 113, 133, 0.6)',
+                'rgba(250, 204, 21, 0.6)',
+                'rgba(56, 189, 248, 0.6)',
+                'rgba(96, 165, 250, 0.6)',
+                'rgba(34, 197, 94, 0.6)',
+                'rgba(168, 85, 247, 0.6)'
+            ];
             new Chart(attackDistCtx, {
                 type: 'polarArea',
                 data: {
                     labels: attackEntries.map(item => item[0]),
                     datasets: [{
                         data: attackEntries.map(item => item[1]),
-                        backgroundColor: [chartPalette.high, chartPalette.medium, chartPalette.low, '#60a5fa', '#38bdf8', '#22c55e'],
+                        backgroundColor: colors,
+                        borderColor: '#07101f',
+                        borderWidth: 2,
+                        hoverBackgroundColor: colors.map(c => c.replace('0.6', '0.8')),
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
-                }
-            });
-        }
-    <script>
-
-    // =========================
-    // ELEMENTS
-    // =========================
-
-    const uploadInput =
-        document.getElementById('logfileInput');
-
-    const uploadDropzone =
-        document.getElementById('uploadDropzone');
-
-    const uploadForm =
-        document.getElementById('uploadForm');
-
-    const loadingOverlay =
-        document.getElementById('loadingOverlay');
-
-    const alertSearch =
-        document.getElementById('alertSearch');
-
-    const severityFilter =
-        document.getElementById('severityFilter');
-
-    const alertRows =
-        Array.from(
-            document.querySelectorAll(
-                '#alertsTable tbody tr'
-            )
-        );
-
-
-    // =========================
-    // FILE PICKER FIX
-    // =========================
-
-    uploadDropzone.addEventListener(
-        'click',
-        function(event) {
-
-            // Prevent double popup
-
-            if (
-                event.target.tagName === 'LABEL' ||
-                event.target.tagName === 'BUTTON' ||
-                event.target.closest('label') ||
-                event.target.closest('button')
-            ) {
-                return;
-            }
-
-            uploadInput.click();
-        }
-    );
-
-
-    // =========================
-    // FILE SELECTED
-    // =========================
-
-    uploadInput.addEventListener(
-        'change',
-        function() {
-
-            if (uploadInput.files.length > 0) {
-
-                const fileName =
-                    uploadInput.files[0].name;
-
-                document.querySelector(
-                    '.drop-label strong'
-                ).innerText =
-                    `Selected File: ${fileName}`;
-
-                uploadDropzone.style.borderColor =
-                    '#35c7ff';
-
-                uploadDropzone.style.background =
-                    'rgba(53, 199, 255, 0.05)';
-            }
-        }
-    );
-
-
-    // =========================
-    // DRAG & DROP
-    // =========================
-
-    uploadDropzone.addEventListener(
-        'dragover',
-        function(event) {
-
-            event.preventDefault();
-
-            uploadDropzone.classList.add(
-                'dragover'
-            );
-        }
-    );
-
-    uploadDropzone.addEventListener(
-        'dragleave',
-        function() {
-
-            uploadDropzone.classList.remove(
-                'dragover'
-            );
-        }
-    );
-
-    uploadDropzone.addEventListener(
-        'drop',
-        function(event) {
-
-            event.preventDefault();
-
-            uploadDropzone.classList.remove(
-                'dragover'
-            );
-
-            if (
-                event.dataTransfer.files.length > 0
-            ) {
-
-                uploadInput.files =
-                    event.dataTransfer.files;
-
-                const fileName =
-                    uploadInput.files[0].name;
-
-                document.querySelector(
-                    '.drop-label strong'
-                ).innerText =
-                    `Selected File: ${fileName}`;
-
-                uploadDropzone.style.borderColor =
-                    '#35c7ff';
-
-                uploadDropzone.style.background =
-                    'rgba(53, 199, 255, 0.05)';
-            }
-        }
-    );
-
-
-    // =========================
-    // FORM SUBMIT FIX
-    // =========================
-
-    uploadForm.addEventListener(
-        'submit',
-        function(event) {
-
-            if (
-                !uploadInput.files ||
-                uploadInput.files.length === 0
-            ) {
-
-                event.preventDefault();
-
-                alert(
-                    'Please select a log file first.'
-                );
-
-                return;
-            }
-
-            loadingOverlay.classList.add(
-                'active'
-            );
-        }
-    );
-
-
-    // =========================
-    // ALERT FILTERING
-    // =========================
-
-    function filterAlerts() {
-
-        const query =
-            alertSearch?.value.toLowerCase() || '';
-
-        const severity =
-            severityFilter?.value || 'all';
-
-        alertRows.forEach(function(row) {
-
-            const rowText =
-                row.textContent.toLowerCase();
-
-            const matchesSearch =
-                rowText.includes(query);
-
-            const matchesSeverity =
-                severity === 'all' ||
-                row.dataset.severity === severity;
-
-            row.style.display =
-                matchesSearch && matchesSeverity
-                    ? ''
-                    : 'none';
-        });
-    }
-
-    alertSearch?.addEventListener(
-        'input',
-        filterAlerts
-    );
-
-    severityFilter?.addEventListener(
-        'change',
-        filterAlerts
-    );
-
-
-    // =========================
-    // DASHBOARD STATS
-    // =========================
-
-    const severityChartElement =
-        document.getElementById(
-            'severityChart'
-        );
-
-    const highAlerts =
-        Number(
-            severityChartElement?.dataset
-                .highAlerts || 0
-        );
-
-    const mediumAlerts =
-        Number(
-            severityChartElement?.dataset
-                .mediumAlerts || 0
-        );
-
-    const lowAlerts =
-        Number(
-            severityChartElement?.dataset
-                .lowAlerts || 0
-        );
-
-    const threatScore =
-        Math.min(
-            100,
-            (highAlerts * 16) +
-            (mediumAlerts * 8) +
-            (lowAlerts * 4)
-        );
-
-    const threatScoreElement =
-        document.getElementById(
-            'threatScoreValue'
-        );
-
-    if (threatScoreElement) {
-
-        threatScoreElement.textContent =
-            threatScore;
-    }
-
-
-    // =========================
-    // CHART COLORS
-    // =========================
-
-    const chartPalette = {
-
-        high: '#fb7185',
-
-        medium: '#facc15',
-
-        low: '#38bdf8',
-
-        accent: '#35c7ff'
-    };
-
-
-    // =========================
-    // SEVERITY CHART
-    // =========================
-
-    if (severityChartElement) {
-
-        new Chart(
-            severityChartElement,
-            {
-
-                type: 'doughnut',
-
-                data: {
-
-                    labels: [
-                        'High',
-                        'Medium',
-                        'Low'
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            data: [
-
-                                highAlerts,
-
-                                mediumAlerts,
-
-                                lowAlerts
-                            ],
-
-                            backgroundColor: [
-
-                                chartPalette.high,
-
-                                chartPalette.medium,
-
-                                chartPalette.low
-                            ],
-
-                            borderWidth: 0
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.08)' },
+                            beginAtZero: true,
                         }
-                    ]
-                },
-
-                options: {
-
-                    responsive: true,
-
+                    },
                     plugins: {
-
                         legend: {
-
                             position: 'bottom',
-
                             labels: {
-
-                                color: '#cbd5e1'
+                                color: '#cbd5e1',
+                                font: { size: 11, weight: '600' },
+                                padding: 12,
+                                usePointStyle: true,
                             }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#dbeafe',
+                            borderColor: 'rgba(53, 199, 255, 0.3)',
+                            borderWidth: 1,
                         }
                     }
                 }
-            }
-        );
-    }
-
-</script>
+            });
+        }
+    </script>
 </body>
 
 </html>
