@@ -71,7 +71,7 @@ soc-log-analyzer/
 ## ▶️ Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/soc-log-analyzer.git
+git clone https://github.com/sidkomandla-hue/soc-log-analyzer.git
 cd soc-log-analyzer
 pip install -r requirements.txt
 python app.py
