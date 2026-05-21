@@ -1,0 +1,1444 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC Log Analyzer Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: 'Inter', sans-serif;
+            --bg: #03070f;
+            --panel: rgba(6, 12, 24, 0.94);
+            --panel-strong: rgba(5, 10, 20, 0.98);
+            --border: rgba(53, 199, 255, 0.08);
+            --text: #d9e2f1;
+            --muted: #7a96af;
+            --cyan: #35c7ff;
+            --cyan-soft: rgba(53, 199, 255, 0.12);
+            --danger: #f97373;
+            --warning: #facc15;
+            --success: #4ade80;
+            --glass: rgba(6, 12, 20, 0.82);
+        }
+
+        .text-muted {
+            color: #9ab6d6 !important;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text);
+            background: radial-gradient(circle at top left, rgba(53, 199, 255, 0.08), transparent 22%),
+                radial-gradient(circle at bottom right, rgba(255, 86, 125, 0.06), transparent 18%),
+                linear-gradient(180deg, #050b16 0%, #081323 48%, #050b16 100%);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .dashboard-shell {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            padding: 24px;
+            min-height: calc(100vh - 48px);
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            background: rgba(5, 10, 20, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(22px);
+            border-radius: 28px;
+            padding: 28px 22px;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.30);
+        }
+
+        .brand-mark {
+            display: block;
+            font-size: 1rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #60a5fa;
+            margin-bottom: 20px;
+        }
+
+        .brand-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .sidebar-nav {
+            margin-top: 34px;
+            padding: 0;
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 14px;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            color: var(--text);
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(53, 199, 255, 0.1);
+            transform: translateX(2px);
+        }
+
+        .sidebar-nav a span.icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(53, 199, 255, 0.12);
+            color: var(--cyan);
+        }
+
+        .main-panel {
+            width: 100%;
+        }
+
+        .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+        }
+
+        .topbar p {
+            margin: 0;
+            color: #9ab6d6;
+        }
+
+        .topbar .top-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .glass-card,
+        .upload-card,
+        .info-card,
+        .chart-card,
+        .feed-card,
+        .table-card,
+        .kpi-card {
+            background: rgba(5, 10, 20, 0.95);
+            border: 1px solid rgba(53, 199, 255, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 28px 75px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(22px);
+            padding: 24px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover,
+        .upload-card:hover,
+        .info-card:hover,
+        .chart-card:hover,
+        .feed-card:hover,
+        .table-card:hover,
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(53, 199, 255, 0.18);
+        }
+
+        .upload-card {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .upload-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .upload-header .title {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            max-width: 100%;
+        }
+
+        .upload-header .subtitle {
+            margin: 0;
+            color: #9ab6d6;
+            line-height: 1.65;
+            max-width: 100%;
+        }
+
+        .dropzone {
+            position: relative;
+            min-height: 220px;
+            border: 2px dashed rgba(53, 199, 255, 0.28);
+            border-radius: 28px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 30px;
+            color: #c8d8f3;
+            background: linear-gradient(180deg, rgba(11, 28, 56, 0.95), rgba(4, 10, 20, 0.98));
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .dropzone.dragover {
+            border-color: #60a5fa;
+            background: rgba(53, 199, 255, 0.08);
+        }
+
+        .dropzone .drop-label {
+            display: grid;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .dropzone .drop-icon {
+            width: 64px;
+            height: 64px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            border-radius: 18px;
+            background: rgba(53, 199, 255, 0.18);
+            color: var(--cyan);
+            font-size: 1.8rem;
+            box-shadow: 0 0 24px rgba(53, 199, 255, 0.16);
+        }
+
+        .dropzone strong {
+            display: block;
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
+        }
+
+        .dropzone p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .dropzone .upload-actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .dropzone .upload-actions .btn {
+            min-width: 140px;
+        }
+
+        .upload-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .upload-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.85rem;
+            color: #dbeafe;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+            padding: 26px 24px;
+            min-height: 150px;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(14, 33, 68, 0.95), rgba(7, 18, 33, 0.92));
+            border: 1px solid rgba(53, 199, 255, 0.12);
+        }
+
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(53, 199, 255, 0.18), transparent 32%);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .kpi-card .kpi-title {
+            position: relative;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+            z-index: 1;
+        }
+
+        .kpi-card .kpi-value {
+            position: relative;
+            z-index: 1;
+            font-size: 2.65rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .kpi-card .kpi-footnote {
+            position: relative;
+            z-index: 1;
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .kpi-card.glow {
+            box-shadow: 0 0 40px rgba(53, 199, 255, 0.2);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .dashboard-grid .left-panel,
+        .dashboard-grid .right-panel {
+            display: grid;
+            gap: 20px;
+        }
+
+        .info-block {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1fr;
+        }
+
+        .info-card h4 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .info-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .feed-card {
+            min-height: 360px;
+        }
+
+        .feed-card h5 {
+            font-size: 1.05rem;
+            margin-bottom: 18px;
+        }
+
+        .feed-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 14px;
+        }
+
+        .feed-item {
+            display: grid;
+            gap: 10px;
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: transform 0.3s ease;
+        }
+
+        .feed-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(53, 199, 255, 0.2);
+        }
+
+        .feed-item .feed-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .feed-item .feed-title {
+            margin: 0;
+            font-size: 0.98rem;
+            font-weight: 600;
+        }
+
+        .feed-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .feed-pill.high {
+            background: rgba(248, 113, 113, 0.12);
+            color: #fca5a5;
+        }
+
+        .feed-pill.medium {
+            background: rgba(251, 191, 36, 0.12);
+            color: #fef08a;
+        }
+
+        .feed-pill.success {
+            background: rgba(74, 222, 128, 0.12);
+            color: #4ade80;
+        }
+
+        .table-card {
+            overflow: hidden;
+        }
+
+        .table-card table {
+            min-width: 100%;
+        }
+
+        .table-card thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: rgba(6, 13, 24, 0.9);
+        }
+
+        .table-card tbody tr {
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .alert-row-high {
+            background: rgba(248, 113, 113, 0.08);
+        }
+
+        .alert-row-medium {
+            background: rgba(251, 191, 36, 0.08);
+        }
+
+        .alert-row-low {
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .alert-row-high:hover,
+        .alert-row-medium:hover,
+        .alert-row-low:hover {
+            box-shadow: 0 0 24px rgba(255,255,255,0.06);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .status-pill.HIGH {
+            background: rgba(248, 113, 113, 0.18);
+            color: #fecaca;
+        }
+
+        .status-pill.MEDIUM {
+            background: rgba(251, 191, 36, 0.18);
+            color: #fef08a;
+        }
+
+        .status-pill.LOW {
+            background: rgba(56, 189, 248, 0.16);
+            color: #93c5fd;
+        }
+
+        .footer-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin-top: 32px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .footer-panel a {
+            color: var(--cyan);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 14, 27, 0.82);
+            display: none;
+            place-items: center;
+            z-index: 999;
+        }
+
+        .loading-overlay.active {
+            display: grid;
+        }
+
+        .spinner-ring {
+            display: inline-block;
+            width: 96px;
+            height: 96px;
+        }
+
+        .spinner-ring::after {
+            content: "";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 16px;
+            border-radius: 50%;
+            border: 6px solid rgba(53, 199, 255, 0.2);
+            border-top-color: #35c7ff;
+            animation: rotate 1.1s linear infinite;
+        }
+
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
+        }
+
+        .glow-pulse {
+            animation: pulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(53, 199, 255, 0.16); }
+            50% { box-shadow: 0 0 40px 12px rgba(53, 199, 255, 0.08); }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #35c7ff, #3b82f6);
+            border: none;
+        }
+
+        .btn-outline-primary {
+            border-color: rgba(53, 199, 255, 0.28);
+            color: #dbeafe;
+        }
+
+        @media (max-width: 1199px) {
+            .dashboard-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .kpi-grid,
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: auto;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .feed-card,
+            .table-card,
+            .chart-card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-ring"></div>
+    </div>
+
+    <div class="dashboard-shell">
+        <aside class="sidebar">
+            <span class="brand-mark">Enterprise SOC Platform</span>
+            <h2 class="brand-title">SOC Log Analyzer</h2>
+            <p class="brand-subtitle">Security operations dashboard with premium SIEM analytics, threat intelligence, and incident visibility.</p>
+
+            <ul class="sidebar-nav">
+                <li><a href="#overview" class="active"><span class="icon">🏁</span>Overview</a></li>
+                <li><a href="#analytics"><span class="icon">📊</span>Analytics</a></li>
+                <li><a href="#alerts"><span class="icon">🚨</span>Alerts</a></li>
+                <li><a href="#intel"><span class="icon">🧠</span>Threat Intel</a></li>
+                <li><a href="#upload"><span class="icon">📁</span>Upload Logs</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-panel">
+            <div class="topbar">
+                <div>
+                    <h1>SOC Monitoring Console</h1>
+                    <p class="text-muted">Secure dashboard layer modeled after modern enterprise SIEM and SOC workflows.</p>
+                </div>
+                <span class="top-status">Dashboard v2.4 • Dark SOC Theme</span>
+            </div>
+
+            <section class="upload-card" id="upload">
+                <div class="upload-header">
+                    <div>
+                        <p class="text-muted mb-2">Secure Ingestion</p>
+                        <h2 class="title">Drag & Drop Logs for Rapid Analysis</h2>
+                        <p class="subtitle">Upload JSON or XML security logs and watch the enterprise SOC intelligence activate.</p>
+                    </div>
+                    <div class="status-chip">
+                        <span class="badge bg-info text-dark">Premium Analyst UX</span>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('dashboard') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div id="uploadDropzone" class="dropzone">
+                        <input type="file" name="logfile" id="logfileInput" accept=".json,.xml" hidden>
+                        <div class="drop-label">
+                            <div class="drop-icon">⬆️</div>
+                            <strong>Drag and drop your log file here</strong>
+                            <p>Supports JSON array, JSON Lines, and XML event log payloads.</p>
+                            <div class="upload-actions">
+                                <label for="logfileInput" class="btn btn-outline-primary">Browse logs</label>
+                                <button type="submit" class="btn btn-primary" id="analyzeBtn">Analyze now</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="upload-badges">
+                        <span class="upload-badge">JSON Array</span>
+                        <span class="upload-badge">JSON Lines</span>
+                        <span class="upload-badge">XML Event</span>
+                        <span class="upload-badge">Real-time SOC</span>
+                    </div>
+                </form>
+
+                {% if upload_error %}
+                <div class="alert alert-warning mt-3" role="alert">
+                    {{ upload_error }}
+                </div>
+                {% endif %}
+            </section>
+
+            {% if not analysis_done %}
+            <section class="glass-card info-card" id="overview">
+                <h4>Ready for Security Analysis</h4>
+                <p>Upload a supported log file to initialize your SOC dashboard. No default alerts are shown until data is processed.</p>
+            </section>
+            {% endif %}
+
+            {% if analysis_done %}
+            <section class="kpi-grid" id="overview">
+                <div class="kpi-card glow">
+                    <div class="kpi-title">Total Alerts</div>
+                    <div class="kpi-value">{{ total_alerts }}</div>
+                    <div class="kpi-footnote">Total findings from the current log upload.</div>
+                </div>
+                <div class="kpi-card glow">
+                    <div class="kpi-title">High Severity</div>
+                    <div class="kpi-value">{{ high_alerts }}</div>
+                    <div class="kpi-footnote">Critical incidents flagged for immediate review.</div>
+                </div>
+                <div class="kpi-card glow">
+                    <div class="kpi-title">Suspicious IPs</div>
+                    <div class="kpi-value">{{ suspicious_ips }}</div>
+                    <div class="kpi-footnote">Unique malicious or suspicious sources identified.</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Top Attack Type</div>
+                    <div class="kpi-value">{{ top_attack }}</div>
+                    <div class="kpi-footnote">Most frequent attack pattern in the current dataset.</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Most Targeted User</div>
+                    <div class="kpi-value">{{ top_user }}</div>
+                    <div class="kpi-footnote">Account or identity with the most alert activity.</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Threat Score</div>
+                    <div class="kpi-value" id="threatScoreValue">0</div>
+                    <div class="kpi-footnote">Calculated risk severity for this analysis.</div>
+                </div>
+            </section>
+
+            <section class="dashboard-grid" id="analytics">
+                <div class="left-panel">
+                    <div class="chart-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-1">Severity Distribution</h5>
+                                <p class="text-muted mb-0">High, medium, and low alerts percentage.</p>
+                            </div>
+                        </div>
+                        <canvas id="severityChart" data-high-alerts="{{ high_alerts }}" data-medium-alerts="{{ medium_alerts }}" data-low-alerts="{{ low_alerts }}"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-1">Attacks Over Time</h5>
+                                <p class="text-muted mb-0">Activity trend from the latest ingestion.</p>
+                            </div>
+                        </div>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="chart-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-1">Top Attacking IPs</h5>
+                                <p class="text-muted mb-0">Most active sources in the alert stream.</p>
+                            </div>
+                        </div>
+                        <canvas id="topIpChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-1">Attack Distribution</h5>
+                                <p class="text-muted mb-0">Relative spread of attack types.</p>
+                            </div>
+                        </div>
+                        <canvas id="attackDistributionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-grid" id="alerts">
+                <div class="left-panel">
+                    <div class="table-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                            <div>
+                                <h5 class="table-title mb-1">Alert Activity Log</h5>
+                                <p class="text-muted mb-0">Search, filter, and inspect active security alerts.</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <input id="alertSearch" type="search" class="form-control form-control-sm" placeholder="Search alerts...">
+                                <select id="severityFilter" class="form-select form-select-sm">
+                                    <option value="all">All Severities</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle" id="alertsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Attack Type</th>
+                                        <th>IP Address</th>
+                                        <th>User</th>
+                                        <th class="text-end">Attempts</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if alerts %}
+                                        {% for alert in alerts %}
+                                        <tr class="alert-row-{{ alert.severity|lower }}" data-severity="{{ alert.severity }}" data-ip="{{ alert.ip }}" data-type="{{ alert.type }}">
+                                            <td>
+                                                <span class="status-pill {{ alert.severity }}">{{ alert.severity }}</span>
+                                            </td>
+                                            <td>{{ alert.type }}</td>
+                                            <td><code>{{ alert.ip }}</code></td>
+                                            <td>{{ alert.user }}</td>
+                                            <td class="text-end">{{ alert.attempts }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-5">
+                                                No alerts found. Upload a supported log file with failed login activity.
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="feed-card" id="intel">
+                        <h5>Live Threat Intelligence</h5>
+                        <p class="text-muted">Active alerts, suspicious IP feed, and analyst notifications.</p>
+                        <ul class="feed-list">
+                            {% if alerts %}
+                                {% for alert in alerts[:5] %}
+                                <li class="feed-item">
+                                    <div class="feed-meta">
+                                        <span class="feed-title">{{ alert.type }}</span>
+                                        <span class="feed-pill {{ alert.severity|lower }}">{{ alert.severity }}</span>
+                                    </div>
+                                    <p class="mb-0">{{ alert.user }} targeted by {{ alert.ip }} with {{ alert.attempts }} attempts.</p>
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="feed-item">
+                                    <div class="feed-meta">
+                                        <span class="feed-title">No incoming alerts</span>
+                                        <span class="feed-pill success">Idle</span>
+                                    </div>
+                                    <p class="mb-0">Upload logs to populate the threat intelligence stream.</p>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>Analyst Dispatch</h4>
+                        <p>Review high-priority alerts first, monitor the IP feed, and keep the attack surface visible with real-time analytics.</p>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <span class="upload-badge">SOC Alert Queue</span>
+                            <span class="upload-badge">Threat Feed</span>
+                            <span class="upload-badge">Rapid Triage</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <footer class="footer-panel">
+                <div>© 2026 SOC Log Analyzer Pro • Built for enterprise security operations.</div>
+                <div>GitHub: <a href="https://github.com/" target="_blank">github.com</a></div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const uploadInput = document.getElementById('logfileInput');
+        const uploadDropzone = document.getElementById('uploadDropzone');
+        const uploadForm = document.getElementById('uploadForm');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Click anywhere on dropzone to open file picker
+        uploadDropzone.addEventListener('click', (event) => {
+            // Only open picker if clicking on the dropzone itself, not on buttons/labels
+            if (event.target === uploadDropzone || event.target.closest('.drop-label')) {
+                uploadInput.click();
+            }
+        });
+        
+        // Update visual feedback when file is selected
+        uploadInput.addEventListener('change', (event) => {
+            if (uploadInput.files && uploadInput.files.length > 0) {
+                uploadDropzone.style.borderColor = '#35c7ff';
+                uploadDropzone.style.background = 'rgba(53, 199, 255, 0.04)';
+                console.log('File selected:', uploadInput.files[0].name);
+            }
+        });
+
+        uploadDropzone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            uploadDropzone.classList.add('dragover');
+        });
+        uploadDropzone.addEventListener('dragleave', () => uploadDropzone.classList.remove('dragover'));
+        uploadDropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            uploadDropzone.classList.remove('dragover');
+            if (event.dataTransfer.files.length > 0) {
+                uploadInput.files = event.dataTransfer.files;
+                uploadDropzone.style.borderColor = '#35c7ff';
+                uploadDropzone.style.background = 'rgba(53, 199, 255, 0.04)';
+                console.log('File dropped:', uploadInput.files[0].name);
+            }
+        });
+
+        // Validate and submit form
+        uploadForm?.addEventListener('submit', (event) => {
+            console.log('Form submit attempted. Files:', uploadInput.files.length);
+            if (!uploadInput.files || uploadInput.files.length === 0) {
+                event.preventDefault();
+                alert('Please select a log file first.');
+                return false;
+            }
+            console.log('Form submission allowed');
+            loadingOverlay.classList.add('active');
+        });
+
+        const alertSearch = document.getElementById('alertSearch');
+        const severityFilter = document.getElementById('severityFilter');
+        const alertRows = Array.from(document.querySelectorAll('#alertsTable tbody tr'));
+
+        const filterAlerts = () => {
+            const query = alertSearch?.value.toLowerCase() || '';
+            const severity = severityFilter?.value || 'all';
+
+            alertRows.forEach((row) => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(query);
+                const matchesSeverity = severity === 'all' || row.dataset.severity === severity;
+                row.style.display = matchesSearch && matchesSeverity ? '' : 'none';
+            });
+        };
+
+        alertSearch?.addEventListener('input', filterAlerts);
+        severityFilter?.addEventListener('change', filterAlerts);
+
+        const highAlerts = Number(document.getElementById('severityChart')?.dataset.highAlerts || 0);
+        const mediumAlerts = Number(document.getElementById('severityChart')?.dataset.mediumAlerts || 0);
+        const lowAlerts = Number(document.getElementById('severityChart')?.dataset.lowAlerts || 0);
+
+        const threatScore = Math.min(100, highAlerts * 16 + mediumAlerts * 8 + lowAlerts * 4);
+        const threatScoreElement = document.getElementById('threatScoreValue');
+        if (threatScoreElement) {
+            threatScoreElement.textContent = threatScore;
+        }
+
+        const chartPalette = {
+            high: '#fb7185',
+            medium: '#facc15',
+            low: '#38bdf8',
+            accent: '#35c7ff'
+        };
+
+        const severityCtx = document.getElementById('severityChart');
+        if (severityCtx) {
+            new Chart(severityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [highAlerts, mediumAlerts, lowAlerts],
+                        backgroundColor: [chartPalette.high, chartPalette.medium, chartPalette.low],
+                        borderColor: '#07101f',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#cbd5e1' }
+                        }
+                    }
+                }
+            });
+        }
+
+        const timelineCtx = document.getElementById('timelineChart');
+        if (timelineCtx) {
+            const timelineLabels = ['-30m', '-20m', '-10m', 'Now'];
+            const timelineData = [0, 0, 0, 0];
+            alertRows.forEach((row, index) => {
+                const bucket = index % timelineData.length;
+                if (row.style.display !== 'none') {
+                    timelineData[bucket] += 1;
+                }
+            });
+            new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: timelineLabels,
+                    datasets: [{
+                        label: 'Alerts',
+                        data: timelineData,
+                        borderColor: chartPalette.accent,
+                        backgroundColor: 'rgba(53, 199, 255, 0.18)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const ipCtx = document.getElementById('topIpChart');
+        if (ipCtx) {
+            const ipCount = {};
+            alertRows.forEach((row) => {
+                const ip = row.dataset.ip || 'unknown';
+                if (!ipCount[ip]) ipCount[ip] = 0;
+                ipCount[ip] += 1;
+            });
+            const topIps = Object.entries(ipCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            new Chart(ipCtx, {
+                type: 'bar',
+                data: {
+                    labels: topIps.map(item => item[0]),
+                    datasets: [{
+                        label: 'Alerts',
+                        data: topIps.map(item => item[1]),
+                        backgroundColor: 'rgba(53, 199, 255, 0.6)',
+                        borderRadius: 12,
+                        maxBarThickness: 32,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const attackDistCtx = document.getElementById('attackDistributionChart');
+        if (attackDistCtx) {
+            const attackCount = {};
+            alertRows.forEach((row) => {
+                const type = row.dataset.type || 'Unknown';
+                if (!attackCount[type]) attackCount[type] = 0;
+                attackCount[type] += 1;
+            });
+            const attackEntries = Object.entries(attackCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            new Chart(attackDistCtx, {
+                type: 'polarArea',
+                data: {
+                    labels: attackEntries.map(item => item[0]),
+                    datasets: [{
+                        data: attackEntries.map(item => item[1]),
+                        backgroundColor: [chartPalette.high, chartPalette.medium, chartPalette.low, '#60a5fa', '#38bdf8', '#22c55e'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
+                }
+            });
+        }
+    <script>
+
+    // =========================
+    // ELEMENTS
+    // =========================
+
+    const uploadInput =
+        document.getElementById('logfileInput');
+
+    const uploadDropzone =
+        document.getElementById('uploadDropzone');
+
+    const uploadForm =
+        document.getElementById('uploadForm');
+
+    const loadingOverlay =
+        document.getElementById('loadingOverlay');
+
+    const alertSearch =
+        document.getElementById('alertSearch');
+
+    const severityFilter =
+        document.getElementById('severityFilter');
+
+    const alertRows =
+        Array.from(
+            document.querySelectorAll(
+                '#alertsTable tbody tr'
+            )
+        );
+
+
+    // =========================
+    // FILE PICKER FIX
+    // =========================
+
+    uploadDropzone.addEventListener(
+        'click',
+        function(event) {
+
+            // Prevent double popup
+
+            if (
+                event.target.tagName === 'LABEL' ||
+                event.target.tagName === 'BUTTON' ||
+                event.target.closest('label') ||
+                event.target.closest('button')
+            ) {
+                return;
+            }
+
+            uploadInput.click();
+        }
+    );
+
+
+    // =========================
+    // FILE SELECTED
+    // =========================
+
+    uploadInput.addEventListener(
+        'change',
+        function() {
+
+            if (uploadInput.files.length > 0) {
+
+                const fileName =
+                    uploadInput.files[0].name;
+
+                document.querySelector(
+                    '.drop-label strong'
+                ).innerText =
+                    `Selected File: ${fileName}`;
+
+                uploadDropzone.style.borderColor =
+                    '#35c7ff';
+
+                uploadDropzone.style.background =
+                    'rgba(53, 199, 255, 0.05)';
+            }
+        }
+    );
+
+
+    // =========================
+    // DRAG & DROP
+    // =========================
+
+    uploadDropzone.addEventListener(
+        'dragover',
+        function(event) {
+
+            event.preventDefault();
+
+            uploadDropzone.classList.add(
+                'dragover'
+            );
+        }
+    );
+
+    uploadDropzone.addEventListener(
+        'dragleave',
+        function() {
+
+            uploadDropzone.classList.remove(
+                'dragover'
+            );
+        }
+    );
+
+    uploadDropzone.addEventListener(
+        'drop',
+        function(event) {
+
+            event.preventDefault();
+
+            uploadDropzone.classList.remove(
+                'dragover'
+            );
+
+            if (
+                event.dataTransfer.files.length > 0
+            ) {
+
+                uploadInput.files =
+                    event.dataTransfer.files;
+
+                const fileName =
+                    uploadInput.files[0].name;
+
+                document.querySelector(
+                    '.drop-label strong'
+                ).innerText =
+                    `Selected File: ${fileName}`;
+
+                uploadDropzone.style.borderColor =
+                    '#35c7ff';
+
+                uploadDropzone.style.background =
+                    'rgba(53, 199, 255, 0.05)';
+            }
+        }
+    );
+
+
+    // =========================
+    // FORM SUBMIT FIX
+    // =========================
+
+    uploadForm.addEventListener(
+        'submit',
+        function(event) {
+
+            if (
+                !uploadInput.files ||
+                uploadInput.files.length === 0
+            ) {
+
+                event.preventDefault();
+
+                alert(
+                    'Please select a log file first.'
+                );
+
+                return;
+            }
+
+            loadingOverlay.classList.add(
+                'active'
+            );
+        }
+    );
+
+
+    // =========================
+    // ALERT FILTERING
+    // =========================
+
+    function filterAlerts() {
+
+        const query =
+            alertSearch?.value.toLowerCase() || '';
+
+        const severity =
+            severityFilter?.value || 'all';
+
+        alertRows.forEach(function(row) {
+
+            const rowText =
+                row.textContent.toLowerCase();
+
+            const matchesSearch =
+                rowText.includes(query);
+
+            const matchesSeverity =
+                severity === 'all' ||
+                row.dataset.severity === severity;
+
+            row.style.display =
+                matchesSearch && matchesSeverity
+                    ? ''
+                    : 'none';
+        });
+    }
+
+    alertSearch?.addEventListener(
+        'input',
+        filterAlerts
+    );
+
+    severityFilter?.addEventListener(
+        'change',
+        filterAlerts
+    );
+
+
+    // =========================
+    // DASHBOARD STATS
+    // =========================
+
+    const severityChartElement =
+        document.getElementById(
+            'severityChart'
+        );
+
+    const highAlerts =
+        Number(
+            severityChartElement?.dataset
+                .highAlerts || 0
+        );
+
+    const mediumAlerts =
+        Number(
+            severityChartElement?.dataset
+                .mediumAlerts || 0
+        );
+
+    const lowAlerts =
+        Number(
+            severityChartElement?.dataset
+                .lowAlerts || 0
+        );
+
+    const threatScore =
+        Math.min(
+            100,
+            (highAlerts * 16) +
+            (mediumAlerts * 8) +
+            (lowAlerts * 4)
+        );
+
+    const threatScoreElement =
+        document.getElementById(
+            'threatScoreValue'
+        );
+
+    if (threatScoreElement) {
+
+        threatScoreElement.textContent =
+            threatScore;
+    }
+
+
+    // =========================
+    // CHART COLORS
+    // =========================
+
+    const chartPalette = {
+
+        high: '#fb7185',
+
+        medium: '#facc15',
+
+        low: '#38bdf8',
+
+        accent: '#35c7ff'
+    };
+
+
+    // =========================
+    // SEVERITY CHART
+    // =========================
+
+    if (severityChartElement) {
+
+        new Chart(
+            severityChartElement,
+            {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: [
+                        'High',
+                        'Medium',
+                        'Low'
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            data: [
+
+                                highAlerts,
+
+                                mediumAlerts,
+
+                                lowAlerts
+                            ],
+
+                            backgroundColor: [
+
+                                chartPalette.high,
+
+                                chartPalette.medium,
+
+                                chartPalette.low
+                            ],
+
+                            borderWidth: 0
+                        }
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    plugins: {
+
+                        legend: {
+
+                            position: 'bottom',
+
+                            labels: {
+
+                                color: '#cbd5e1'
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+</script>
+</body>
+
+</html>
