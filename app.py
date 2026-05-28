@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request
 import json
 import os
+import re
+import sqlite3
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
+from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 
@@ -102,6 +106,359 @@ def parse_uploaded_logs(uploaded_file):
     return logs
 
 
+ALERT_DB_PATH = "alerts.db"
+POWERSHELL_KEYWORDS = [
+    "powershell", "invoke-expression", "iex", "downloadstring", "bypass",
+    "-nop", "-w hidden", "encodedcommand", "cmd.exe", "bitsadmin",
+    "certutil", "Invoke-Command", "Start-Process", "New-Object System.Net.WebClient"
+]
+BRUTE_FORCE_HIGH = 5
+BRUTE_FORCE_MEDIUM = 3
+EXCESSIVE_AUTH_HIGH = 10
+EXCESSIVE_AUTH_MEDIUM = 6
+PORT_SCAN_HIGH = 10
+PORT_SCAN_MEDIUM = 6
+
+
+def parse_timestamp(value):
+    if not value:
+        return None
+
+    if isinstance(value, datetime):
+        return value
+
+    text = str(value).strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%f"):
+            try:
+                return datetime.strptime(text, fmt)
+            except ValueError:
+                continue
+    return None
+
+
+def format_timestamp(value):
+    parsed = parse_timestamp(value)
+    if parsed:
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.isoformat()
+    return datetime.now(timezone.utc).isoformat()
+
+
+@dataclass
+class Alert:
+    title: str
+    severity: str
+    ip: str
+    timestamp: str
+    rule: str
+    type: str
+    user: str = "unknown"
+    attempts: int = 0
+    raw_message: str = ""
+
+    def to_row(self):
+        return {
+            "title": self.title,
+            "severity": self.severity,
+            "ip": self.ip,
+            "timestamp": self.timestamp,
+            "rule": self.rule,
+            "type": self.type,
+            "user": self.user,
+            "attempts": self.attempts,
+            "raw_message": self.raw_message,
+        }
+
+
+class AlertStore:
+    def __init__(self, db_path=ALERT_DB_PATH):
+        self.db_path = db_path
+        self._initialize()
+
+    def _initialize(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    severity TEXT,
+                    source_ip TEXT,
+                    timestamp TEXT,
+                    rule TEXT,
+                    alert_type TEXT,
+                    user TEXT,
+                    attempts INTEGER,
+                    message TEXT,
+                    created_at TEXT
+                )
+                """
+            )
+            conn.commit()
+
+    def save_alerts(self, alerts):
+        if not alerts:
+            return
+        with sqlite3.connect(self.db_path) as conn:
+            conn.executemany(
+                "INSERT INTO alerts (title, severity, source_ip, timestamp, rule, alert_type, user, attempts, message, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        alert.title,
+                        alert.severity,
+                        alert.ip,
+                        alert.timestamp,
+                        alert.rule,
+                        alert.type,
+                        alert.user,
+                        alert.attempts,
+                        alert.raw_message,
+                        datetime.now(timezone.utc).isoformat(),
+                    )
+                    for alert in alerts
+                ],
+            )
+            conn.commit()
+
+    def fetch_recent(self, limit=50):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT title, severity, source_ip AS ip, timestamp, rule, alert_type AS type, user, attempts, message FROM alerts ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+
+class DetectionRule:
+    def __init__(self, name):
+        self.name = name
+
+    def apply(self, logs):
+        return []
+
+
+class BruteForceRule(DetectionRule):
+    def __init__(self):
+        super().__init__("Brute Force Detection")
+
+    def apply(self, logs):
+        failed_by_key = defaultdict(int)
+        latest_timestamp = {}
+
+        for log in logs:
+            if log.get("status") != "failed":
+                continue
+
+            ip = log.get("ip", "unknown")
+            user = log.get("user", "unknown")
+            key = (ip, user)
+            failed_by_key[key] += 1
+            ts = parse_timestamp(log.get("timestamp"))
+            if ts and (key not in latest_timestamp or ts > latest_timestamp[key]):
+                latest_timestamp[key] = ts
+
+        alerts = []
+        for (ip, user), count in failed_by_key.items():
+            severity = "HIGH" if count >= BRUTE_FORCE_HIGH else "MEDIUM" if count >= BRUTE_FORCE_MEDIUM else None
+            if not severity:
+                continue
+
+            title = "Brute Force Attack" if count >= BRUTE_FORCE_HIGH else "Suspicious Login Activity"
+            alerts.append(
+                Alert(
+                    title=title,
+                    severity=severity,
+                    ip=ip,
+                    timestamp=format_timestamp(latest_timestamp.get((ip, user))),
+                    rule=self.name,
+                    type="Brute Force",
+                    user=user,
+                    attempts=count,
+                    raw_message=f"Detected {count} failed login attempts from {ip}.",
+                ).to_row()
+            )
+
+        return alerts
+
+
+class PortScanRule(DetectionRule):
+    def __init__(self):
+        super().__init__("Port Scan Detection")
+
+    def _extract_port(self, log):
+        for key in ("destination_port", "dst_port", "dport", "port", "target_port", "remote_port"):
+            value = log.get(key)
+            if value:
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    continue
+        return None
+
+    def apply(self, logs):
+        ports_by_ip = defaultdict(set)
+        latest_timestamp = {}
+
+        for log in logs:
+            ip = log.get("ip", "unknown")
+            port = self._extract_port(log)
+            if port is None:
+                continue
+
+            ports_by_ip[ip].add(port)
+            ts = parse_timestamp(log.get("timestamp"))
+            if ts and (ip not in latest_timestamp or ts > latest_timestamp[ip]):
+                latest_timestamp[ip] = ts
+
+        alerts = []
+        for ip, ports in ports_by_ip.items():
+            count = len(ports)
+            if count >= PORT_SCAN_HIGH:
+                severity = "HIGH"
+            elif count >= PORT_SCAN_MEDIUM:
+                severity = "MEDIUM"
+            else:
+                continue
+
+            alerts.append(
+                Alert(
+                    title="Port Scan Detected",
+                    severity=severity,
+                    ip=ip,
+                    timestamp=format_timestamp(latest_timestamp.get(ip)),
+                    rule=self.name,
+                    type="Port Scan",
+                    user="unknown",
+                    attempts=count,
+                    raw_message=f"Source scanned {count} unique ports.",
+                ).to_row()
+            )
+
+        return alerts
+
+
+class SuspiciousPowerShellRule(DetectionRule):
+    def __init__(self):
+        super().__init__("PowerShell Command Detection")
+
+    def apply(self, logs):
+        suspects = defaultdict(lambda: {"matches": [], "timestamps": []})
+
+        for log in logs:
+            ip = log.get("ip", "unknown")
+            user = log.get("user", "unknown")
+            text = " ".join(
+                str(log.get(k, "")) for k in ("command", "message", "details", "script", "event_description", "raw_entry")
+            ).lower()
+            if not text:
+                continue
+
+            found = [kw for kw in POWERSHELL_KEYWORDS if kw in text]
+            if not found:
+                continue
+
+            key = (ip, user)
+            suspects[key]["matches"].extend(found)
+            ts = parse_timestamp(log.get("timestamp"))
+            if ts:
+                suspects[key]["timestamps"].append(ts)
+
+        alerts = []
+        for (ip, user), details in suspects.items():
+            count = len(details["matches"])
+            severity = "CRITICAL" if any(k in ["invoke-expression", "encodedcommand", "downloadstring", "bypass"] for k in details["matches"]) else "HIGH"
+            alerts.append(
+                Alert(
+                    title="Suspicious PowerShell Activity",
+                    severity=severity,
+                    ip=ip,
+                    timestamp=format_timestamp(max(details["timestamps"]) if details["timestamps"] else None),
+                    rule=self.name,
+                    type="PowerShell Execution",
+                    user=user,
+                    attempts=count,
+                    raw_message=f"Detected PowerShell keywords: {', '.join(sorted(set(details['matches'])))}.",
+                ).to_row()
+            )
+
+        return alerts
+
+
+class ExcessiveFailedAuthRule(DetectionRule):
+    def __init__(self):
+        super().__init__("Failed Authentication Detection")
+
+    def apply(self, logs):
+        failed_by_ip = defaultdict(int)
+        latest_timestamp = {}
+
+        for log in logs:
+            if log.get("status") != "failed":
+                continue
+
+            ip = log.get("ip", "unknown")
+            failed_by_ip[ip] += 1
+            ts = parse_timestamp(log.get("timestamp"))
+            if ts and (ip not in latest_timestamp or ts > latest_timestamp[ip]):
+                latest_timestamp[ip] = ts
+
+        alerts = []
+        for ip, count in failed_by_ip.items():
+            if count >= EXCESSIVE_AUTH_HIGH:
+                severity = "CRITICAL"
+                title = "Excessive Failed Authentication"
+            elif count >= EXCESSIVE_AUTH_MEDIUM:
+                severity = "HIGH"
+                title = "Repeated Failed Logins"
+            else:
+                continue
+
+            alerts.append(
+                Alert(
+                    title=title,
+                    severity=severity,
+                    ip=ip,
+                    timestamp=format_timestamp(latest_timestamp.get(ip)),
+                    rule=self.name,
+                    type="Failed Authentication",
+                    user="unknown",
+                    attempts=count,
+                    raw_message=f"Detected {count} failed authentication attempts from {ip}.",
+                ).to_row()
+            )
+
+        return alerts
+
+
+class DetectionEngine:
+    def __init__(self, rules):
+        self.rules = rules
+
+    def run(self, logs):
+        normalized_logs = [normalize_log_entry(entry) for entry in logs if isinstance(entry, dict)]
+        alerts = []
+        for rule in self.rules:
+            alerts.extend(rule.apply(normalized_logs))
+        return sorted(alerts, key=lambda item: (item["severity"], item["timestamp"]), reverse=True)
+
+
+alert_store = AlertStore()
+engine = DetectionEngine([
+    BruteForceRule(),
+    PortScanRule(),
+    SuspiciousPowerShellRule(),
+    ExcessiveFailedAuthRule(),
+])
+
+
 def normalize_log_entry(entry):
     if not isinstance(entry, dict):
         return {"ip": "unknown", "user": "unknown", "status": "", "event_id": None}
@@ -155,6 +512,24 @@ def normalize_log_entry(entry):
         elif event_id == "4624":
             status = "success"
 
+    normalized["timestamp"] = (
+        entry.get("timestamp")
+        or entry.get("time")
+        or entry.get("TimeCreated")
+        or entry.get("SystemTime")
+        or entry.get("event_time")
+        or entry.get("date")
+    )
+    normalized["command_text"] = (
+        entry.get("command")
+        or entry.get("message")
+        or entry.get("details")
+        or entry.get("script")
+        or entry.get("event_description")
+        or ""
+    )
+    normalized["raw_entry"] = entry
+
     normalized["ip"] = normalized.get("ip", "unknown")
     normalized["user"] = normalized.get("user", "unknown")
     normalized["status"] = status or ""
@@ -162,62 +537,6 @@ def normalize_log_entry(entry):
         normalized["event_id"] = event_id
 
     return normalized
-
-
-# DETECTION ENGINE
-
-def detect_bruteforce(logs):
-
-    failed_attempts = defaultdict(int)
-
-    alerts = []
-
-    for raw_log in logs:
-
-        if not isinstance(raw_log, dict):
-            continue
-
-        log = normalize_log_entry(raw_log)
-        status = log.get("status", "")
-
-        if status == "failed":
-
-            ip = log.get("ip", "unknown")
-            user = log.get("user", "unknown")
-
-            key = (ip, user)
-
-            failed_attempts[key] += 1
-
-
-    for (ip, user), count in failed_attempts.items():
-
-        if count >= 5:
-
-            alerts.append({
-
-                "severity": "HIGH",
-                "type": "Brute Force Attack",
-                "ip": ip,
-                "user": user,
-                "attempts": count
-
-            })
-
-        elif count >= 3:
-
-            alerts.append({
-
-                "severity": "MEDIUM",
-                "type": "Suspicious Login Activity",
-                "ip": ip,
-                "user": user,
-                "attempts": count
-
-            })
-
-
-    return alerts
 
 
 # DASHBOARD ROUTE
@@ -243,18 +562,17 @@ def dashboard():
                     "Unable to parse the uploaded log file. "
                     "Supported file formats are JSON array, JSON Lines, or XML event data."
                 )
-
-            alerts = detect_bruteforce(logs)
-            analysis_done = True
-
+                analysis_done = False
+            else:
+                alerts = engine.run(logs)
+                alert_store.save_alerts([Alert(**alert) for alert in alerts])
+                analysis_done = True
 
         else:
-
             alerts = []
             analysis_done = False
 
     else:
-
         alerts = []
         analysis_done = False
 
