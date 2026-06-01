@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO
 import json
 import os
 import re
@@ -9,6 +10,28 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 
 app = Flask(__name__)
+# Use Flask-SocketIO to support live alerts over WebSockets.
+# cors_allowed_origins='*' permits the dashboard to connect from the same origin.
+socketio = SocketIO(app, cors_allowed_origins='*')
+
+
+def emit_live_alerts(alerts):
+    """Emit a live alert payload to all connected Socket.IO clients."""
+    if not alerts:
+        return
+    payload = {'alerts': alerts}
+    print(f"[emit_live_alerts] Broadcasting {len(alerts)} alert(s) to all connected clients on namespace '/'")
+    socketio.emit('new_alerts', payload, namespace='/')
+
+
+@socketio.on('connect')
+def handle_connect():
+    print('[socketio] Client connected')
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('[socketio] Client disconnected')
 
 
 # LOAD LOGS
@@ -544,52 +567,38 @@ def normalize_log_entry(entry):
 @app.route("/", methods=["GET", "POST"])
 
 def dashboard():
-
     alerts = []
-
     upload_error = None
+    analysis_done = False
 
     if request.method == "POST":
-
         uploaded_file = request.files.get("logfile")
-
         if uploaded_file and uploaded_file.filename:
             uploaded_file.seek(0)
             logs = parse_uploaded_logs(uploaded_file)
-
             if not logs:
                 upload_error = (
                     "Unable to parse the uploaded log file. "
                     "Supported file formats are JSON array, JSON Lines, or XML event data."
                 )
-                analysis_done = False
             else:
                 alerts = engine.run(logs)
-                alert_store.save_alerts([Alert(**alert) for alert in alerts])
-                analysis_done = True
-
+                if alerts:
+                    alert_store.save_alerts([Alert(**alert) for alert in alerts])
+                    emit_live_alerts(alerts)
+                    analysis_done = True
+                else:
+                    upload_error = "Upload processed, but no alerts were detected in the current log file."
         else:
-            alerts = []
-            analysis_done = False
-
+            upload_error = "Please upload a log file to begin analysis."
     else:
         alerts = []
         analysis_done = False
 
-
-    # STATISTICS
-
-    high_count = sum(
-        1 for a in alerts if a["severity"] == "HIGH"
-    )
-
-    medium_count = sum(
-        1 for a in alerts if a["severity"] == "MEDIUM"
-    )
-
-    low_count = sum(
-        1 for a in alerts if a["severity"] == "LOW"
-    )
+    critical_count = sum(1 for a in alerts if a["severity"] == "CRITICAL")
+    high_count = sum(1 for a in alerts if a["severity"] == "HIGH")
+    medium_count = sum(1 for a in alerts if a["severity"] == "MEDIUM")
+    low_count = sum(1 for a in alerts if a["severity"] == "LOW")
 
     ip_counts = Counter(a.get("ip", "unknown") for a in alerts)
     user_counts = Counter(a.get("user", "unknown") for a in alerts)
@@ -600,34 +609,26 @@ def dashboard():
     top_attack = attack_counts.most_common(1)[0][0] if attack_counts else "n/a"
 
     return render_template(
-
         "dashboard.html",
-
         alerts=alerts,
-
         total_alerts=len(alerts),
-
+        critical_alerts=critical_count,
         high_alerts=high_count,
-
         medium_alerts=medium_count,
-
         low_alerts=low_count,
-
-        suspicious_ips=len(
-            set(a["ip"] for a in alerts)
-        ),
-
+        suspicious_ips=len(set(a["ip"] for a in alerts)),
         top_ip=top_ip,
         top_ip_count=top_ip_count,
         top_user=top_user,
         top_user_alerts=top_user_alerts,
         top_attack=top_attack,
         upload_error=upload_error,
-        analysis_done=analysis_done
-
+        analysis_done=analysis_done,
     )
+
+
 
 
 if __name__ == "__main__":
 
-    app.run(debug=True)
+    socketio.run(app, debug=True)

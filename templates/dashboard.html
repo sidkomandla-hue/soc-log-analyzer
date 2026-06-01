@@ -38,6 +38,7 @@
             margin: 0;
             min-height: 100vh;
             color: var(--text);
+            overflow-x: hidden;
             background: radial-gradient(circle at top left, rgba(53, 199, 255, 0.08), transparent 22%),
                 radial-gradient(circle at bottom right, rgba(255, 86, 125, 0.06), transparent 18%),
                 linear-gradient(180deg, #050b16 0%, #081323 48%, #050b16 100%);
@@ -54,6 +55,8 @@
             gap: 24px;
             padding: 24px;
             min-height: calc(100vh - 48px);
+            max-width: 1480px;
+            margin: 0 auto;
         }
 
         .sidebar {
@@ -380,8 +383,8 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1.8fr 1fr;
+            gap: 22px;
             margin-bottom: 24px;
         }
 
@@ -467,6 +470,11 @@
             letter-spacing: 0.05em;
         }
 
+        .feed-pill.critical {
+            background: rgba(248, 113, 113, 0.16);
+            color: #fecaca;
+        }
+
         .feed-pill.high {
             background: rgba(248, 113, 113, 0.12);
             color: #fca5a5;
@@ -489,6 +497,68 @@
 
         .table-card {
             overflow: hidden;
+        }
+
+        .live-card {
+            display: block;
+            padding: 24px;
+            border-radius: 28px;
+            background: rgba(6, 12, 24, 0.95);
+            border: 1px solid rgba(53, 199, 255, 0.08);
+            box-shadow: 0 28px 75px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(22px);
+            margin-bottom: 24px;
+        }
+
+        .notification-feed {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .notification-item > div {
+            min-width: 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 96px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #fff;
+        }
+
+        .status-connected {
+            background: #22c55e;
+        }
+
+        .status-disconnected {
+            background: #f97373;
+        }
+
+        .notification-item strong {
+            color: #ffffff;
+        }
+
+        .notification-item small {
+            color: #94a3b8;
+            font-size: 0.8rem;
         }
 
         .table-card .table-title {
@@ -521,6 +591,10 @@
             transition: background 0.2s ease;
         }
 
+        .alert-row-critical {
+            background: rgba(248, 113, 113, 0.18);
+        }
+
         .alert-row-high {
             background: rgba(248, 113, 113, 0.08);
         }
@@ -533,6 +607,7 @@
             background: rgba(56, 189, 248, 0.08);
         }
 
+        .alert-row-critical:hover,
         .alert-row-high:hover,
         .alert-row-medium:hover,
         .alert-row-low:hover {
@@ -548,6 +623,11 @@
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.03em;
+        }
+
+        .status-pill.CRITICAL {
+            background: rgba(248, 113, 113, 0.24);
+            color: #fee2e2;
         }
 
         .status-pill.HIGH {
@@ -688,6 +768,8 @@
             .sidebar {
                 position: relative;
                 top: auto;
+                width: 100%;
+                margin-bottom: 24px;
             }
 
             .dashboard-grid {
@@ -702,6 +784,14 @@
             .chart-container-small {
                 height: 300px;
             }
+
+            .live-card .d-flex {
+                flex-wrap: wrap;
+            }
+
+            .notification-item {
+                flex-wrap: wrap;
+            }
         }
 
         @media (max-width: 767px) {
@@ -711,8 +801,12 @@
                 gap: 16px;
             }
 
+            .sidebar {
+                padding: 22px;
+            }
+
             .kpi-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                 gap: 16px;
             }
 
@@ -735,8 +829,25 @@
 
             .feed-card,
             .table-card,
-            .chart-card {
+            .chart-card,
+            .live-card {
                 padding: 18px;
+            }
+
+            .live-card .d-flex {
+                justify-content: stretch;
+                flex-wrap: wrap;
+            }
+
+            .live-card .btn {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+
+            .notification-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
             }
 
             .kpi-card .kpi-value {
@@ -756,7 +867,6 @@
             .table-card tbody td {
                 padding: 8px;
             }
-            
         }
     </style>
 </head>
@@ -831,44 +941,65 @@
                 {% endif %}
             </section>
 
-            {% if not analysis_done %}
             <section class="glass-card info-card" id="overview">
-                <h4>Ready for Security Analysis</h4>
-                <p>Upload a supported log file to initialize your SOC dashboard. No default alerts are shown until data is processed.</p>
+                <h4>{{ 'Ready for Security Analysis' if not analysis_done else 'Security Analysis Overview' }}</h4>
+                <p>{{ 'Upload a supported log file to initialize your SOC dashboard. Live streaming alerts will appear in the dashboard immediately.' if not analysis_done else 'Review the current alert stream and SOC metrics below. New alerts are pushed instantly as they arrive.' }}</p>
             </section>
-            {% endif %}
 
-            {% if analysis_done %}
             <section class="kpi-grid" id="overview">
                 <div class="kpi-card glow">
                     <div class="kpi-title">Total Alerts</div>
-                    <div class="kpi-value">{{ total_alerts }}</div>
-                    <div class="kpi-footnote">Total findings from the current log upload.</div>
+                    <div class="kpi-value" id="totalAlertsValue">{{ total_alerts }}</div>
+                    <div class="kpi-footnote">Total findings from the current log upload or stored history.</div>
+                </div>
+                <div class="kpi-card glow">
+                    <div class="kpi-title">Critical Alerts</div>
+                    <div class="kpi-value" id="criticalAlertsValue">{{ critical_alerts }}</div>
+                    <div class="kpi-footnote">Top priority incidents requiring analyst review.</div>
                 </div>
                 <div class="kpi-card glow">
                     <div class="kpi-title">High Severity</div>
-                    <div class="kpi-value">{{ high_alerts }}</div>
-                    <div class="kpi-footnote">Critical incidents flagged for immediate review.</div>
+                    <div class="kpi-value" id="highAlertsValue">{{ high_alerts }}</div>
+                    <div class="kpi-footnote">High-risk alerts from the current dataset.</div>
                 </div>
                 <div class="kpi-card glow">
                     <div class="kpi-title">Suspicious IPs</div>
-                    <div class="kpi-value">{{ suspicious_ips }}</div>
-                    <div class="kpi-footnote">Unique malicious or suspicious sources identified.</div>
+                    <div class="kpi-value" id="suspiciousIpsValue">{{ suspicious_ips }}</div>
+                    <div class="kpi-footnote">Unique suspicious sources identified.</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Top Attack Type</div>
-                    <div class="kpi-value">{{ top_attack }}</div>
+                    <div class="kpi-value" id="topAttackValue">{{ top_attack }}</div>
                     <div class="kpi-footnote">Most frequent attack pattern in the current dataset.</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Most Targeted User</div>
-                    <div class="kpi-value">{{ top_user }}</div>
+                    <div class="kpi-value" id="topUserValue">{{ top_user }}</div>
                     <div class="kpi-footnote">Account or identity with the most alert activity.</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Threat Score</div>
                     <div class="kpi-value" id="threatScoreValue">0</div>
                     <div class="kpi-footnote">Calculated risk severity for this analysis.</div>
+                </div>
+            </section>
+
+            <section class="glass-card live-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="mb-1">Live Alert Stream</h5>
+                        <p class="text-muted mb-0">Incoming alerts are pushed instantly through WebSockets.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="socketStatusBadge" class="status-badge status-disconnected">Disconnected</span>
+                        <span class="badge bg-danger text-white">Live</span>
+                    </div>
+                </div>
+                <div class="notification-feed" id="notificationFeed">
+                    <div class="text-muted">No live alerts yet. Live events will appear here as they are emitted by the backend.</div>
+                </div>
+                <div class="mt-3 text-muted" style="font-size:0.95rem;">
+                    Live alerts are pushed automatically to the dashboard whenever the server emits a `new_alerts` event.
                 </div>
             </section>
 
@@ -882,7 +1013,7 @@
                             </div>
                         </div>
                         <div class="chart-container-small">
-                            <canvas id="severityChart" data-high-alerts="{{ high_alerts }}" data-medium-alerts="{{ medium_alerts }}" data-low-alerts="{{ low_alerts }}"></canvas>
+                            <canvas id="severityChart" data-critical-alerts="{{ critical_alerts }}" data-high-alerts="{{ high_alerts }}" data-medium-alerts="{{ medium_alerts }}" data-low-alerts="{{ low_alerts }}"></canvas>
                         </div>
                     </div>
 
@@ -937,6 +1068,7 @@
                                 <input id="alertSearch" type="search" class="form-control form-control-sm" placeholder="Search alerts...">
                                 <select id="severityFilter" class="form-select form-select-sm">
                                     <option value="all">All Severities</option>
+                                    <option value="CRITICAL">Critical</option>
                                     <option value="HIGH">High</option>
                                     <option value="MEDIUM">Medium</option>
                                     <option value="LOW">Low</option>
@@ -948,28 +1080,32 @@
                                 <thead>
                                     <tr>
                                         <th>Severity</th>
+                                        <th>Rule</th>
                                         <th>Attack Type</th>
                                         <th>IP Address</th>
                                         <th>User</th>
+                                        <th>Timestamp</th>
                                         <th class="text-end">Attempts</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% if alerts %}
                                         {% for alert in alerts %}
-                                        <tr class="alert-row-{{ alert.severity|lower }}" data-severity="{{ alert.severity }}" data-ip="{{ alert.ip }}" data-type="{{ alert.type }}">
+                                        <tr class="alert-row-{{ alert.severity|lower }}" data-severity="{{ alert.severity }}" data-rule="{{ alert.rule }}" data-type="{{ alert.type }}" data-ip="{{ alert.ip }}" data-user="{{ alert.user }}" data-timestamp="{{ alert.timestamp or '' }}" data-attempts="{{ alert.attempts }}">
                                             <td>
                                                 <span class="status-pill {{ alert.severity }}">{{ alert.severity }}</span>
                                             </td>
+                                            <td>{{ alert.rule }}</td>
                                             <td>{{ alert.type }}</td>
                                             <td><code style="color: #60a5fa;">{{ alert.ip }}</code></td>
                                             <td>{{ alert.user }}</td>
+                                            <td>{{ alert.timestamp or 'n/a' }}</td>
                                             <td class="text-end">{{ alert.attempts }}</td>
                                         </tr>
                                         {% endfor %}
                                     {% else %}
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-5">
+                                            <td colspan="7" class="text-center text-muted py-5">
                                                 No alerts found. Upload a supported log file with failed login activity.
                                             </td>
                                         </tr>
@@ -992,7 +1128,7 @@
                                         <span class="feed-title">{{ alert.type }}</span>
                                         <span class="feed-pill {{ alert.severity|lower }}">{{ alert.severity }}</span>
                                     </div>
-                                    <p class="mb-0" style="font-size: 0.9rem;">{{ alert.user }} targeted by {{ alert.ip }} with {{ alert.attempts }} attempts.</p>
+                                    <p class="mb-0" style="font-size: 0.9rem;">{{ alert.rule }} from {{ alert.ip }} targeting {{ alert.user }} at {{ alert.timestamp or 'unknown' }}.</p>
                                 </li>
                                 {% endfor %}
                             {% else %}
@@ -1017,7 +1153,6 @@
                     </div>
                 </div>
             </section>
-            {% endif %}
 
             <footer class="footer-panel">
                 <div>© 2026 SOC Log Analyzer Pro • Built for enterprise security operations.</div>
@@ -1027,6 +1162,13 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+    <script>
+        if (typeof io !== 'function') {
+            console.error('[dashboard] Socket.IO client library failed to load from static file.');
+        }
+    </script>
     <script>
         // ======================
         // FILE UPLOAD HANDLING
@@ -1038,6 +1180,8 @@
         const browseBtn = document.getElementById('browseBtn');
         const fileNameDisplay = document.getElementById('fileName');
         const loadingOverlay = document.getElementById('loadingOverlay');
+
+        console.log('[dashboard] Live SOC dashboard script initialized');
 
         // Browse button click handler
         browseBtn.addEventListener('click', (e) => {
@@ -1098,35 +1242,272 @@
         });
 
         // ======================
-        // ALERT TABLE FILTERING
+        // ALERT TABLE FILTERING AND STREAMING
         // ======================
         const alertSearch = document.getElementById('alertSearch');
         const severityFilter = document.getElementById('severityFilter');
-        const alertRows = Array.from(document.querySelectorAll('#alertsTable tbody tr'));
+        const alertTableBody = document.querySelector('#alertsTable tbody');
+        const notificationFeed = document.getElementById('notificationFeed');
 
-        const filterAlerts = () => {
+        console.log('[dashboard] Alert table body found:', !!alertTableBody);
+
+        let allAlerts = Array.from(document.querySelectorAll('#alertsTable tbody tr[data-severity]')).map((row) => ({
+            severity: row.dataset.severity,
+            rule: row.dataset.rule,
+            type: row.dataset.type,
+            ip: row.dataset.ip,
+            user: row.dataset.user,
+            timestamp: row.dataset.timestamp || 'n/a',
+            attempts: Number(row.dataset.attempts || row.querySelector('.text-end')?.textContent.trim() || 0),
+            element: row,
+        }));
+
+        function createAlertRow(alert) {
+            const row = document.createElement('tr');
+            row.className = `alert-row-${alert.severity.toLowerCase()}`;
+            row.dataset.severity = alert.severity;
+            row.dataset.rule = alert.rule;
+            row.dataset.type = alert.type;
+            row.dataset.ip = alert.ip;
+            row.dataset.user = alert.user;
+            row.dataset.timestamp = alert.timestamp || 'n/a';
+            row.dataset.attempts = alert.attempts || 0;
+            row.innerHTML = `
+                <td><span class="status-pill ${alert.severity}">${alert.severity}</span></td>
+                <td>${alert.rule}</td>
+                <td>${alert.type}</td>
+                <td><code style="color: #60a5fa;">${alert.ip}</code></td>
+                <td>${alert.user}</td>
+                <td>${alert.timestamp || 'n/a'}</td>
+                <td class="text-end">${alert.attempts || 0}</td>
+            `;
+            return row;
+        }
+
+        function appendAlert(alert) {
+            if (!alertTableBody) {
+                console.warn('[dashboard] No alert table body available to append alert');
+                return;
+            }
+            const placeholder = alertTableBody.querySelector('tr td[colspan="7"]');
+            if (placeholder) {
+                placeholder.parentNode.remove();
+            }
+
+            const row = createAlertRow(alert);
+            alertTableBody.prepend(row);
+            allAlerts.unshift({ ...alert, element: row });
+            filterAlerts();
+            console.log('[dashboard] Appended alert to table:', alert);
+        }
+
+        function appendNotification(alert) {
+            if (!notificationFeed) {
+                return;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.innerHTML = `
+                <div>
+                    <strong>${alert.title}</strong>
+                    <div><small>${alert.rule} • ${alert.type}</small></div>
+                </div>
+                <div class="text-end">
+                    <div><small>${alert.ip}</small></div>
+                    <div><small>${alert.timestamp || 'n/a'}</small></div>
+                </div>
+            `;
+            notificationFeed.prepend(item);
+            while (notificationFeed.children.length > 6) {
+                notificationFeed.removeChild(notificationFeed.lastChild);
+            }
+        }
+
+        function resetDashboardState() {
+            if (notificationFeed) {
+                notificationFeed.innerHTML = '<div class="text-muted">No live alerts yet. Live events will appear here as they are emitted by the backend.</div>';
+            }
+            allAlerts = [];
+            updateKpiValues();
+            updateCharts();
+        }
+
+        function updateKpiValues() {
+            const totalAlerts = allAlerts.length;
+            const criticalAlerts = allAlerts.filter((alert) => alert.severity === 'CRITICAL').length;
+            const highAlertsValue = allAlerts.filter((alert) => alert.severity === 'HIGH').length;
+            const mediumAlerts = allAlerts.filter((alert) => alert.severity === 'MEDIUM').length;
+            const lowAlerts = allAlerts.filter((alert) => alert.severity === 'LOW').length;
+            const suspiciousIps = new Set(allAlerts.map((alert) => alert.ip)).size;
+            const topAttack = allAlerts.reduce((acc, alert) => {
+                acc[alert.type] = (acc[alert.type] || 0) + 1;
+                return acc;
+            }, {});
+            const topAttackType = Object.entries(topAttack).sort((a, b) => b[1] - a[1])[0]?.[0] || 'n/a';
+            const topUser = allAlerts.reduce((acc, alert) => {
+                acc[alert.user] = (acc[alert.user] || 0) + 1;
+                return acc;
+            }, {});
+            const topUserValue = Object.entries(topUser).sort((a, b) => b[1] - a[1])[0]?.[0] || 'n/a';
+            const threatScore = Math.min(100, criticalAlerts * 20 + highAlertsValue * 14 + mediumAlerts * 8 + lowAlerts * 4);
+
+            const totalAlertsEl = document.getElementById('totalAlertsValue');
+            const criticalAlertsEl = document.getElementById('criticalAlertsValue');
+            const highAlertsEl = document.getElementById('highAlertsValue');
+            const suspiciousIpsEl = document.getElementById('suspiciousIpsValue');
+            const topAttackEl = document.getElementById('topAttackValue');
+            const topUserEl = document.getElementById('topUserValue');
+            const threatScoreEl = document.getElementById('threatScoreValue');
+
+            if (totalAlertsEl) totalAlertsEl.textContent = totalAlerts;
+            if (criticalAlertsEl) criticalAlertsEl.textContent = criticalAlerts;
+            if (highAlertsEl) highAlertsEl.textContent = highAlertsValue;
+            if (suspiciousIpsEl) suspiciousIpsEl.textContent = suspiciousIps;
+            if (topAttackEl) topAttackEl.textContent = topAttackType;
+            if (topUserEl) topUserEl.textContent = topUserValue;
+            if (threatScoreEl) threatScoreEl.textContent = threatScore;
+        }
+
+        function countBySeverity() {
+            return {
+                critical: allAlerts.filter((alert) => alert.severity === 'CRITICAL').length,
+                high: allAlerts.filter((alert) => alert.severity === 'HIGH').length,
+                medium: allAlerts.filter((alert) => alert.severity === 'MEDIUM').length,
+                low: allAlerts.filter((alert) => alert.severity === 'LOW').length,
+            };
+        }
+
+        function updateCharts() {
+            if (severityChart) {
+                const counts = countBySeverity();
+                severityChart.data.datasets[0].data = [counts.critical, counts.high, counts.medium, counts.low];
+                severityChart.update();
+            }
+            if (timelineChart) {
+                const buckets = [0, 0, 0, 0];
+                const now = Date.now();
+                allAlerts.forEach((alert) => {
+                    const timestamp = Date.parse(alert.timestamp);
+                    const idx = Number.isFinite(timestamp)
+                        ? Math.min(3, Math.floor(Math.max(0, (now - timestamp) / 600000)))
+                        : 3;
+                    buckets[Math.min(3, idx)] += 1;
+                });
+                timelineChart.data.datasets[0].data = buckets;
+                timelineChart.update();
+            }
+            if (topIpChart) {
+                const ipCounts = allAlerts.reduce((acc, alert) => {
+                    acc[alert.ip] = (acc[alert.ip] || 0) + 1;
+                    return acc;
+                }, {});
+                const topIps = Object.entries(ipCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                topIpChart.data.labels = topIps.map((item) => item[0]);
+                topIpChart.data.datasets[0].data = topIps.map((item) => item[1]);
+                topIpChart.update();
+            }
+            if (attackDistributionChart) {
+                const attackCounts = allAlerts.reduce((acc, alert) => {
+                    acc[alert.type] = (acc[alert.type] || 0) + 1;
+                    return acc;
+                }, {});
+                const attackEntries = Object.entries(attackCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+                attackDistributionChart.data.labels = attackEntries.map((item) => item[0]);
+                attackDistributionChart.data.datasets[0].data = attackEntries.map((item) => item[1]);
+                attackDistributionChart.update();
+            }
+        }
+
+        function filterAlerts() {
             const query = alertSearch?.value.toLowerCase() || '';
             const severity = severityFilter?.value || 'all';
 
-            alertRows.forEach((row) => {
+            allAlerts.forEach((alert) => {
+                const row = alert.element;
                 const text = row.textContent.toLowerCase();
                 const matchesSearch = text.includes(query);
-                const matchesSeverity = severity === 'all' || row.dataset.severity === severity;
+                const matchesSeverity = severity === 'all' || alert.severity === severity;
                 row.style.display = matchesSearch && matchesSeverity ? '' : 'none';
             });
-        };
+        }
 
         alertSearch?.addEventListener('input', filterAlerts);
         severityFilter?.addEventListener('change', filterAlerts);
 
+        // Initialize live SocketIO connection to receive alerts without refresh.
+        const socket = typeof io === 'function' ? io({
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        }) : null;
+
+        const socketStatusBadge = document.getElementById('socketStatusBadge');
+
+        function updateSocketStatus(connected) {
+            if (!socketStatusBadge) return;
+            socketStatusBadge.textContent = connected ? 'Connected' : 'Disconnected';
+            socketStatusBadge.classList.toggle('status-connected', connected);
+            socketStatusBadge.classList.toggle('status-disconnected', !connected);
+        }
+
+        if (socket) {
+            console.log('[dashboard] Socket.IO client loaded, attempting connection...');
+            updateSocketStatus(false);
+            
+            socket.on('connect', () => {
+                console.log('[dashboard] Socket connected successfully');
+                console.log('[dashboard] Socket ID:', socket.id);
+                updateSocketStatus(true);
+            });
+            
+            socket.on('disconnect', (reason) => {
+                console.warn('[dashboard] Socket disconnected - reason:', reason);
+                updateSocketStatus(false);
+            });
+            
+            socket.on('reconnect', () => {
+                console.log('[dashboard] Socket reconnected');
+                updateSocketStatus(true);
+            });
+            
+            socket.on('reconnect_attempt', () => {
+                console.log('[dashboard] Socket reconnection attempt');
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('[dashboard] Socket connection error:', error);
+                updateSocketStatus(false);
+            });
+
+            socket.on('new_alerts', (payload) => {
+                console.log('[dashboard] Alert received:', payload);
+                if (!payload || !Array.isArray(payload.alerts)) {
+                    console.warn('[dashboard] Invalid alert payload');
+                    return;
+                }
+                payload.alerts.forEach((alert) => {
+                    console.log('[dashboard] Processing alert:', alert.title);
+                    appendAlert(alert);
+                    appendNotification(alert);
+                });
+                updateKpiValues();
+                updateCharts();
+            });
+        } else {
+            console.error('[dashboard] Socket.IO client library did not load.');
+        }
+
         // ======================
         // THREAT SCORE CALCULATION
         // ======================
+        const criticalAlerts = Number(document.getElementById('severityChart')?.dataset.criticalAlerts || 0);
         const highAlerts = Number(document.getElementById('severityChart')?.dataset.highAlerts || 0);
         const mediumAlerts = Number(document.getElementById('severityChart')?.dataset.mediumAlerts || 0);
         const lowAlerts = Number(document.getElementById('severityChart')?.dataset.lowAlerts || 0);
 
-        const threatScore = Math.min(100, highAlerts * 16 + mediumAlerts * 8 + lowAlerts * 4);
+        const threatScore = Math.min(100, criticalAlerts * 20 + highAlerts * 14 + mediumAlerts * 8 + lowAlerts * 4);
         const threatScoreElement = document.getElementById('threatScoreValue');
         if (threatScoreElement) {
             threatScoreElement.textContent = threatScore;
@@ -1143,19 +1524,25 @@
         };
 
         // Disable animations for better performance
-        Chart.defaults.animation = false;
+        if (window.Chart) {
+            Chart.defaults.animation = false;
+        } else {
+            console.warn('Chart.js did not load; charts may not render.');
+        }
 
         // Severity Distribution Chart (Doughnut)
-        const severityCtx = document.getElementById('severityChart');
+        let severityChart = null;
+        const severityCanvas = document.getElementById('severityChart');
+        const severityCtx = severityCanvas?.getContext ? severityCanvas.getContext('2d') : null;
         if (severityCtx) {
-            const total = highAlerts + mediumAlerts + lowAlerts || 1;
-            new Chart(severityCtx, {
+            const total = criticalAlerts + highAlerts + mediumAlerts + lowAlerts || 1;
+            severityChart = new Chart(severityCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['High', 'Medium', 'Low'],
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
                     datasets: [{
-                        data: [highAlerts, mediumAlerts, lowAlerts],
-                        backgroundColor: [chartPalette.high, chartPalette.medium, chartPalette.low],
+                        data: [criticalAlerts, highAlerts, mediumAlerts, lowAlerts],
+                        backgroundColor: ['#ef4444', chartPalette.high, chartPalette.medium, chartPalette.low],
                         borderColor: '#07101f',
                         borderWidth: 3,
                         hoverOffset: 8,
@@ -1195,23 +1582,18 @@
         }
 
         // Timeline Chart (Line)
-        const timelineCtx = document.getElementById('timelineChart');
+        let timelineChart = null;
+        const timelineCanvas = document.getElementById('timelineChart');
+        const timelineCtx = timelineCanvas?.getContext ? timelineCanvas.getContext('2d') : null;
         if (timelineCtx) {
             const timelineLabels = ['-30m', '-20m', '-10m', 'Now'];
-            const timelineData = [0, 0, 0, 0];
-            alertRows.forEach((row, index) => {
-                const bucket = index % timelineData.length;
-                if (row.style.display !== 'none') {
-                    timelineData[bucket] += 1;
-                }
-            });
-            new Chart(timelineCtx, {
+            timelineChart = new Chart(timelineCtx, {
                 type: 'line',
                 data: {
                     labels: timelineLabels,
                     datasets: [{
                         label: 'Alerts',
-                        data: timelineData,
+                        data: [0, 0, 0, 0],
                         borderColor: chartPalette.accent,
                         backgroundColor: 'rgba(53, 199, 255, 0.1)',
                         fill: true,
@@ -1253,24 +1635,17 @@
         }
 
         // Top IPs Chart (Bar)
-        const ipCtx = document.getElementById('topIpChart');
+        let topIpChart = null;
+        const ipCanvas = document.getElementById('topIpChart');
+        const ipCtx = ipCanvas?.getContext ? ipCanvas.getContext('2d') : null;
         if (ipCtx) {
-            const ipCount = {};
-            alertRows.forEach((row) => {
-                if (row.style.display !== 'none') {
-                    const ip = row.dataset.ip || 'unknown';
-                    if (!ipCount[ip]) ipCount[ip] = 0;
-                    ipCount[ip] += 1;
-                }
-            });
-            const topIps = Object.entries(ipCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            new Chart(ipCtx, {
+            topIpChart = new Chart(ipCtx, {
                 type: 'bar',
                 data: {
-                    labels: topIps.map(item => item[0]),
+                    labels: [],
                     datasets: [{
                         label: 'Alerts',
-                        data: topIps.map(item => item[1]),
+                        data: [],
                         backgroundColor: 'rgba(53, 199, 255, 0.6)',
                         borderColor: 'rgba(53, 199, 255, 0.8)',
                         borderWidth: 1,
@@ -1309,35 +1684,34 @@
         }
 
         // Attack Distribution Chart (Polar)
-        const attackDistCtx = document.getElementById('attackDistributionChart');
+        let attackDistributionChart = null;
+        const attackDistCanvas = document.getElementById('attackDistributionChart');
+        const attackDistCtx = attackDistCanvas?.getContext ? attackDistCanvas.getContext('2d') : null;
         if (attackDistCtx) {
-            const attackCount = {};
-            alertRows.forEach((row) => {
-                if (row.style.display !== 'none') {
-                    const type = row.dataset.type || 'Unknown';
-                    if (!attackCount[type]) attackCount[type] = 0;
-                    attackCount[type] += 1;
-                }
-            });
-            const attackEntries = Object.entries(attackCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
-            const colors = [
-                'rgba(251, 113, 133, 0.6)',
-                'rgba(250, 204, 21, 0.6)',
-                'rgba(56, 189, 248, 0.6)',
-                'rgba(96, 165, 250, 0.6)',
-                'rgba(34, 197, 94, 0.6)',
-                'rgba(168, 85, 247, 0.6)'
-            ];
-            new Chart(attackDistCtx, {
+            attackDistributionChart = new Chart(attackDistCtx, {
                 type: 'polarArea',
                 data: {
-                    labels: attackEntries.map(item => item[0]),
+                    labels: [],
                     datasets: [{
-                        data: attackEntries.map(item => item[1]),
-                        backgroundColor: colors,
+                        data: [],
+                        backgroundColor: [
+                            'rgba(251, 113, 133, 0.6)',
+                            'rgba(250, 204, 21, 0.6)',
+                            'rgba(56, 189, 248, 0.6)',
+                            'rgba(96, 165, 250, 0.6)',
+                            'rgba(34, 197, 94, 0.6)',
+                            'rgba(168, 85, 247, 0.6)'
+                        ],
                         borderColor: '#07101f',
                         borderWidth: 2,
-                        hoverBackgroundColor: colors.map(c => c.replace('0.6', '0.8')),
+                        hoverBackgroundColor: [
+                            'rgba(251, 113, 133, 0.8)',
+                            'rgba(250, 204, 21, 0.8)',
+                            'rgba(56, 189, 248, 0.8)',
+                            'rgba(96, 165, 250, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(168, 85, 247, 0.8)'
+                        ],
                     }]
                 },
                 options: {
@@ -1371,6 +1745,14 @@
                     }
                 }
             });
+        }
+
+        // Run one-time update after initial chart setup so live alert counts are accurate.
+        if (allAlerts.length === 0) {
+            resetDashboardState();
+        } else {
+            updateKpiValues();
+            updateCharts();
         }
     </script>
 </body>

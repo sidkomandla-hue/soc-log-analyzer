@@ -1,40 +1,29 @@
 # 🔐 SOC Log Analyzer Pro
 
-Enterprise-style Security Operations Center (SOC) log analysis and threat detection dashboard built using Python and Flask.
+Enterprise-style Security Operations Center (SOC) log analysis and threat detection dashboard built with Python, Flask, and real-time WebSocket streaming.
 
 ---
 
 ## 🚀 Features
 
-- Real-time SOC-style dashboard
-- Log upload & analysis engine
-- Brute-force attack detection
+- Real-time live alert dashboard
+- Log upload and analysis engine
+- Brute-force and suspicious activity detection
 - Severity-based alert classification
-- Interactive security analytics charts
-- Suspicious IP identification
-- Search & filter alert system
-- Professional dark-mode SOC UI
-- JSON/XML log parsing support
-
----
-
-## 🖥️ Dashboard Preview
-
-![Dashboard](screenshots/dashboard.png)
-
-![Analytics](screenshots/analytics.png)
-
-![Threat Intel](screenshots/threatintel.png)
+- Interactive Chart.js analytics
+- Search and filter active alerts
+- JSON, JSONL, and XML log parsing support
+- Dark-mode SOC-style UI
 
 ---
 
 ## 🧠 Detection Capabilities
 
-- Brute-force detection
-- Suspicious authentication activity
+- Brute-force attack detection
+- Suspicious authentication behavior
 - Failed login correlation
-- Alert prioritization
-- Threat scoring engine
+- Alert prioritization by severity
+- Threat scoring for analyzed datasets
 
 ---
 
@@ -46,58 +35,76 @@ Log Upload → Parsing Engine → Detection Engine → Alert Correlation → Das
 
 ## ⚙️ Tech Stack
 
-- Python
+- Python 3.11+
 - Flask
+- Flask-SocketIO
 - Bootstrap 5
 - Chart.js
 - HTML/CSS/JavaScript
-- JSON/XML Parsing
+- SQLite (alert persistence)
 
 ---
 
 ## 📂 Project Structure
 
+```
 soc-log-analyzer/
-│
 ├── app.py
 ├── templates/
+│   └── dashboard.html
 ├── static/
+│   └── socket.io.min.js
 ├── screenshots/
 ├── sample_attack_logs.json
 └── requirements.txt
+```
 
 ---
 
 ## ▶️ Installation
 
-```bash
-git clone https://github.com/sidkomandla-hue/soc-log-analyzer.git
+```powershell
+git clone <your-repository-url>
 cd soc-log-analyzer
+python -m venv .venv
+.venv\Scripts\Activate.ps1    # Windows PowerShell
 pip install -r requirements.txt
 python app.py
 ```
 
+> If you are using Command Prompt, run `.venv\Scripts\activate.bat` instead.
+
 ---
 
-## 🌐 Access Dashboard
+## 🌐 Access the Dashboard
 
-```bash
+Open the following URL in your browser:
+
+```text
 http://127.0.0.1:5000
 ```
+
+---
+
+## 🛠️ Notes
+
+- The app uses a local Socket.IO client file from `static/socket.io.min.js`.
+- Uploaded logs are parsed from JSON, JSON Lines, or XML.
+- Alerts are stored in `alerts.db` by default.
 
 ---
 
 ## 📌 Future Improvements
 
 - MITRE ATT&CK mapping
-- Real-time log streaming
-- Elasticsearch integration
+- Real-time log ingestion
+- Elasticsearch / SIEM integration
 - Machine learning anomaly detection
-- SIEM correlation engine
+- User authentication and role-based access
 
 ---
 
 ## 👨‍💻 Author
 
-Siddartha reddy komandla 
+Siddartha Reddy Komandla
 Cybersecurity & SOC Enthusiast
